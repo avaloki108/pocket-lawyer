@@ -1,0 +1,1 @@
+User Query → Vector Search → Document Retrieval → Context Assembly → AI Generation → Citation Validation → Encrypted Response

@@ -1,0 +1,1 @@
+Client → TLS 1.3 → AES-256 Encryption → Zero-Knowledge Processing → Encrypted Storage

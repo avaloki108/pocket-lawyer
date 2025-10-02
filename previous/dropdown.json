@@ -1,0 +1,6 @@
+tool_use_id=toolu_vrtx_01Pf3rQiBXfUqYm2qnDg78W2
+tool_name=replace_code
+input={
+    "old_str": "        <!-- Bottom Navigation -->\n        <nav class=\"fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-md bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 flex\">",
+    "new_str": "        <!-- Bottom Navigation -->\n        <nav class=\"fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-md bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700\">\n            <!-- Screen Icons -->\n            <div class=\"flex\">"
+}
