@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../core/biometric_service.dart';
 import '../core/accessibility_service.dart';
 
@@ -12,6 +13,7 @@ class SplashScreen extends StatefulWidget {
 class _SplashScreenState extends State<SplashScreen> {
   final BiometricService _biometricService = BiometricService();
   final AccessibilityService _accessibilityService = AccessibilityService();
+  bool _navigated = false;
 
   @override
   void initState() {
@@ -19,7 +21,19 @@ class _SplashScreenState extends State<SplashScreen> {
     _checkBiometricAuth();
   }
 
+  Future<void> _goHome() async {
+    if (!mounted || _navigated) return;
+    _navigated = true;
+    Navigator.of(context).pushReplacementNamed('/home');
+  }
+
   Future<void> _checkBiometricAuth() async {
+    final disableBiometric = (dotenv.maybeGet('DISABLE_BIOMETRIC') ?? 'false').toLowerCase() == 'true';
+    if (disableBiometric) {
+      await _goHome();
+      return;
+    }
+
     final isAvailable = await _biometricService.isBiometricAvailable();
 
     if (isAvailable) {
@@ -31,20 +45,13 @@ class _SplashScreenState extends State<SplashScreen> {
 
       if (authenticated) {
         _accessibilityService.announce('Authentication successful');
-        // Navigate to home screen
-        if (mounted) {
-          Navigator.of(context).pushReplacementNamed('/home');
-        }
+        await _goHome();
       } else {
         _accessibilityService.announce('Authentication failed');
-        // Show error or retry
         _showAuthFailedDialog();
       }
     } else {
-      // No biometric available, proceed directly
-      if (mounted) {
-        Navigator.of(context).pushReplacementNamed('/home');
-      }
+      await _goHome();
     }
   }
 

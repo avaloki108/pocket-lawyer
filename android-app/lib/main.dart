@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'core/constants.dart';
 import 'core/themes.dart';
 import 'presentation/splash_screen.dart';
@@ -8,7 +9,23 @@ import 'presentation/chat_screen.dart';
 import 'presentation/prompts_screen.dart';
 import 'presentation/settings_screen.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  // Attempt to load .env file (optional). If missing, proceed; keys may come from --dart-define.
+  try {
+    await dotenv.load(fileName: '.env');
+  } catch (_) {
+    try {
+      await dotenv.load(fileName: '.env.example');
+    } catch (_) {}
+  }
+
+  final missing = AppConstants.missingRequiredKeys();
+  if (missing.isNotEmpty) {
+
+    print('[PocketLawyer][WARNING] Missing API keys: ${missing.join(', ')}. Some features may not work.');
+  }
+
   runApp(const ProviderScope(child: MyApp()));
 }
 

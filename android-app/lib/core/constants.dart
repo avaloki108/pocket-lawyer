@@ -1,3 +1,5 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 /// Application constants
 class AppConstants {
   static const String appName = 'Pocket Lawyer';
@@ -10,17 +12,35 @@ class AppConstants {
   static const String legiScanBaseUrl = 'https://api.legiscan.com';
   static const String congressGovBaseUrl = 'https://api.congress.gov/v3';
   static const String openAiBaseUrl = 'https://api.openai.com/v1';
+  static const String courtListenerBaseUrl = 'https://www.courtlistener.com/api/rest/v4';
 
-  // API Keys (should be stored securely in production)
-  static const String legiScanApiKey = '6da9b568d057150d0f032566d5ca54e4';
-  static const String congressGovApiKey =
-      'mXdjKaTeDzfwekxPaPILvoa8malhIenpSNtmCkwI';
+  // Compile-time dart-define values (empty if not provided)
+  static const String _openAiFromDefine = String.fromEnvironment('OPENAI_API_KEY');
+  static const String _legiScanFromDefine = String.fromEnvironment('LEGISCAN_API_KEY');
+  static const String _congressFromDefine = String.fromEnvironment('CONGRESS_GOV_API_KEY');
+  static const String _pineconeFromDefine = String.fromEnvironment('PINECONE_API_KEY');
+  static const String _courtListenerFromDefine = String.fromEnvironment('COURTLISTENER_API_KEY');
+
+  // Resolved API keys (priority: dart-define > .env > empty)
+  static String get openAiApiKey => _openAiFromDefine.isNotEmpty
+      ? _openAiFromDefine
+      : (dotenv.maybeGet('OPENAI_API_KEY') ?? '');
+  static String get legiScanApiKey => _legiScanFromDefine.isNotEmpty
+      ? _legiScanFromDefine
+      : (dotenv.maybeGet('LEGISCAN_API_KEY') ?? '');
+  static String get congressGovApiKey => _congressFromDefine.isNotEmpty
+      ? _congressFromDefine
+      : (dotenv.maybeGet('CONGRESS_GOV_API_KEY') ?? '');
+  static String get pineconeApiKey => _pineconeFromDefine.isNotEmpty
+      ? _pineconeFromDefine
+      : (dotenv.maybeGet('PINECONE_API_KEY') ?? '');
+  static String get courtListenerApiKey => _courtListenerFromDefine.isNotEmpty
+      ? _courtListenerFromDefine
+      : (dotenv.maybeGet('COURTLISTENER_API_KEY') ?? '');
 
   // Storage keys
   static const String apiKeyStorageKey = 'api_key';
   static const String userSettingsKey = 'user_settings';
-  static const String openAiApiKey =
-      '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';
 
   // Encryption
   static const int aesKeyLength = 256;
@@ -42,4 +62,13 @@ class AppConstants {
     'immigration',
     'consumer_protection',
   ];
+
+  /// Utility: quick validation to ensure critical API keys are present (after dotenv load).
+  static List<String> missingRequiredKeys() {
+    final missing = <String>[];
+    if (openAiApiKey.isEmpty) missing.add('OPENAI_API_KEY');
+    if (legiScanApiKey.isEmpty) missing.add('LEGISCAN_API_KEY');
+    if (congressGovApiKey.isEmpty) missing.add('CONGRESS_GOV_API_KEY');
+    return missing;
+  }
 }
