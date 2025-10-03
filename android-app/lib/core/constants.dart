@@ -7,7 +7,7 @@ class AppConstants {
   static const String baseUrl = 'https://api.pocketlawyer.com';
 
   // Backend proxy endpoint prefixes
-  static const String backendOpenAiPath = '/openai';
+  static const String backendOpenRouterPath = '/openrouter';
   static const String backendLegiScanPath = '/legiscan';
   static const String backendCongressPath = '/congress';
   static const String backendCourtListenerPath = '/courtlistener';

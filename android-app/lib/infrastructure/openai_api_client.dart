@@ -13,13 +13,13 @@ class OpenAiApiClient {
 
   Future<String> generate({
     required String prompt,
-    String model = 'gpt-4o-mini',
+    String model = 'openai/gpt-oss-120b',
     double temperature = 0.3,
     int maxTokens = 1000,
   }) async {
     try {
       final response = await _dio.post(
-        '${AppConstants.backendOpenAiPath}/chat',
+        '${AppConstants.backendOpenRouterPath}/chat',
         data: {
           'model': model,
           'messages': [
