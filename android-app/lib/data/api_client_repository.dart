@@ -1,126 +1,118 @@
-import '../infrastructure/openai_api_client.dart';
+import '../infrastructure/open_router_api_client.dart';
 import '../infrastructure/legiscan_api_client.dart';
 import '../infrastructure/congress_api_client.dart';
 
 class ApiClientRepository {
-  final OpenAiApiClient _openAiClient;
+  final OpenRouterApiClient _openRouterClient;
   final LegiScanApiClient _legiScanClient;
   final CongressApiClient _congressClient;
 
   ApiClientRepository(
-    this._openAiClient,
+    this._openRouterClient,
     this._legiScanClient,
     this._congressClient,
   );
 
-  // Legal API functions as defined in the specification
-
-  /// Retrieve state statutes and regulations based on jurisdiction and legal topic
+  /// Retrieve state statutes and regulations, augmented by LLM.
   Future<Map<String, dynamic>> getStateLaws({
     required String state,
     required String legalTopic,
     String? searchQuery,
   }) async {
     try {
-      return await _legiScanClient.getStateLaws(
+      final lawApiResponse = await _legiScanClient.getStateLaws(
         state: state,
         query: searchQuery != null ? '$legalTopic $searchQuery' : legalTopic,
       );
+      
+      final prompt = 'Based on the following data, provide a comprehensive summary of $legalTopic laws in $state: $lawApiResponse. Explain in simple terms, include relevant statutes, and cite sources.';
+      final aiSummary = await _openRouterClient.generate(prompt: prompt);
+
+      return {'structured_data': lawApiResponse, 'ai_summary': aiSummary};
     } catch (e) {
-      // Fallback to OpenAI for general legal information if API fails
+      // If structured API fails, fallback to pure LLM.
       final prompt =
           'Provide information on $legalTopic laws in $state${searchQuery != null ? ' regarding $searchQuery' : ''}. Include relevant statutes and cite sources.';
-      final aiResponse = await _openAiClient.generate(prompt: prompt);
-      return {'ai_response': aiResponse, 'source': 'openai_fallback'};
+      final aiResponse = await _openRouterClient.generate(prompt: prompt);
+      return {'ai_response': aiResponse, 'source': 'openrouter_fallback'};
     }
   }
 
-  /// Retrieve federal statutes and regulations
+  /// Retrieve federal statutes and regulations, augmented by LLM.
   Future<Map<String, dynamic>> getFederalLaws({
     required String legalTopic,
     String? searchQuery,
   }) async {
     try {
-      return await _congressClient.searchLaws(
+      final lawApiResponse = await _congressClient.searchLaws(
         query: searchQuery != null ? '$legalTopic $searchQuery' : legalTopic,
       );
+
+      final prompt = 'Based on the following data, provide a comprehensive summary of federal $legalTopic laws: $lawApiResponse. Explain in simple terms, include relevant statutes, and cite sources.';
+      final aiSummary = await _openRouterClient.generate(prompt: prompt);
+      
+      return {'structured_data': lawApiResponse, 'ai_summary': aiSummary};
     } catch (e) {
-      // Fallback to OpenAI
+      // If structured API fails, fallback to pure LLM.
       final prompt =
           'Provide information on federal $legalTopic laws${searchQuery != null ? ' regarding $searchQuery' : ''}. Include relevant statutes and cite sources.';
-      final aiResponse = await _openAiClient.generate(prompt: prompt);
-      return {'ai_response': aiResponse, 'source': 'openai_fallback'};
+      final aiResponse = await _openRouterClient.generate(prompt: prompt);
+      return {'ai_response': aiResponse, 'source': 'openrouter_fallback'};
     }
   }
 
-  /// Search relevant court decisions and case law
+  /// Search relevant court decisions and case law (simulated via AI).
   Future<Map<String, dynamic>> searchCaseLaw({
     required String jurisdiction,
     required String legalIssue,
     int maxResults = 5,
   }) async {
-    // For now, use OpenAI to simulate case law search
-    // In production, this would integrate with case law databases
     final prompt =
         'Search for relevant court cases in $jurisdiction regarding $legalIssue. Provide up to $maxResults cases with citations and brief summaries.';
-    final aiResponse = await _openAiClient.generate(prompt: prompt);
-    return {'ai_response': aiResponse, 'source': 'openai'};
+    final aiResponse = await _openRouterClient.generate(prompt: prompt);
+    return {'ai_response': aiResponse, 'source': 'openrouter'};
   }
 
-  /// Retrieve specific law by citation or statute number
+  /// Retrieve specific law by citation or statute number, augmented by LLM.
   Future<Map<String, dynamic>> getSpecificCitation({
     required String citation,
     String? jurisdiction,
   }) async {
     try {
-      // Try to determine if it's a federal or state citation
       if (jurisdiction == null) {
-        // Simple heuristic - if citation contains state abbreviations, treat as state
-        final stateAbbreviations = [
-          'CA',
-          'NY',
-          'TX',
-          'FL',
-          'IL',
-          'PA',
-          'OH',
-          'GA',
-          'NC',
-          'MI',
-        ];
-        final isStateCitation = stateAbbreviations.any(
-          (abbr) => citation.contains(abbr),
-        );
-
-        if (isStateCitation) {
-          // Extract state from citation (simplified)
-          final stateMatch = RegExp(r'\b([A-Z]{2})\b').firstMatch(citation);
-          if (stateMatch != null) {
-            jurisdiction = stateMatch.group(1);
-          }
+        final stateAbbreviations = ['CA', 'NY', 'TX', 'FL', 'IL', 'PA', 'OH', 'GA', 'NC', 'MI'];
+        final matchedAbbr = stateAbbreviations.firstWhere((abbr) => citation.contains(abbr), orElse: () => '');
+        if (matchedAbbr.isNotEmpty) {
+          jurisdiction = matchedAbbr;
+        } else {
+          jurisdiction = 'federal'; // Default to federal if no state is obvious
         }
       }
 
-      if (jurisdiction != null && jurisdiction != 'federal') {
-        // Try state law first
-        return await _legiScanClient.getStateLaws(
-          state: jurisdiction,
-          query: citation,
-        );
+      Map<String, dynamic> lawApiResponse;
+      String apiSource;
+
+      if (jurisdiction != 'federal') {
+        lawApiResponse = await _legiScanClient.getStateLaws(state: jurisdiction!, query: citation);
+        apiSource = 'LegiScan';
       } else {
-        // Try federal law
-        return await _congressClient.searchLaws(query: citation);
+        lawApiResponse = await _congressClient.searchLaws(query: citation);
+        apiSource = 'Congress.gov';
       }
+
+      final prompt = 'Based on the following data from $apiSource, provide a detailed explanation of the law or citation "$citation": $lawApiResponse. Explain its meaning and implications in simple terms.';
+      final aiSummary = await _openRouterClient.generate(prompt: prompt);
+
+      return {'structured_data': lawApiResponse, 'ai_summary': aiSummary};
     } catch (e) {
-      // Fallback to OpenAI
+      // If structured API fails, fallback to pure LLM.
       final prompt =
           'Provide the text and explanation of citation: $citation${jurisdiction != null ? ' from $jurisdiction' : ''}.';
-      final aiResponse = await _openAiClient.generate(prompt: prompt);
-      return {'ai_response': aiResponse, 'source': 'openai_fallback'};
+      final aiResponse = await _openRouterClient.generate(prompt: prompt);
+      return {'ai_response': aiResponse, 'source': 'openrouter_fallback'};
     }
   }
 
-  // Legacy methods for backward compatibility
-  Future<String> queryOpenAi(String prompt) =>
-      _openAiClient.generate(prompt: prompt);
+  /// Legacy method, now pointing to OpenRouter.
+  Future<String> queryOpenRouter(String prompt) => _openRouterClient.generate(prompt: prompt);
 }

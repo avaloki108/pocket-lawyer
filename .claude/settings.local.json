@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(dir:*)",
-      "Bash(flutter:*)"
+      "Bash(flutter:*)",
+      "Read(//c/Users/jason/AppData/Local/Android/sdk/**)",
+      "Bash(rd:*)"
     ],
     "deny": [],
     "ask": []
