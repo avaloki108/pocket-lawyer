@@ -1,10 +1,10 @@
 import 'package:dio/dio.dart';
-import '../core/constants.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class LegiScanApiClient {
   final Dio _dio = Dio(
     BaseOptions(
-      baseUrl: AppConstants.baseUrl,
+      baseUrl: 'https://api.legiscan.com',
     ),
   );
 
@@ -14,9 +14,15 @@ class LegiScanApiClient {
     int year = 2024,
   }) async {
     try {
+      final apiKey = dotenv.env['LEGISCAN_API_KEY'] ?? '';
+      if (apiKey.isEmpty) {
+        throw Exception('LEGISCAN_API_KEY not found in .env file');
+      }
+
       final response = await _dio.get(
-        AppConstants.backendLegiScanPath,
+        '/',
         queryParameters: {
+          'key': apiKey,
           'op': 'getSearch',
           'state': state.toUpperCase(),
           'query': query ?? '',
@@ -35,9 +41,18 @@ class LegiScanApiClient {
 
   Future<Map<String, dynamic>> getBill(int billId) async {
     try {
+      final apiKey = dotenv.env['LEGISCAN_API_KEY'] ?? '';
+      if (apiKey.isEmpty) {
+        throw Exception('LEGISCAN_API_KEY not found in .env file');
+      }
+
       final response = await _dio.get(
-        AppConstants.backendLegiScanPath,
-        queryParameters: {'op': 'getBill', 'id': billId},
+        '/',
+        queryParameters: {
+          'key': apiKey,
+          'op': 'getBill',
+          'id': billId,
+        },
       );
 
       if (response.statusCode == 200) {
@@ -51,9 +66,18 @@ class LegiScanApiClient {
 
   Future<Map<String, dynamic>> getBillText(int billId) async {
     try {
+      final apiKey = dotenv.env['LEGISCAN_API_KEY'] ?? '';
+      if (apiKey.isEmpty) {
+        throw Exception('LEGISCAN_API_KEY not found in .env file');
+      }
+
       final response = await _dio.get(
-        AppConstants.backendLegiScanPath,
-        queryParameters: {'op': 'getBillText', 'id': billId},
+        '/',
+        queryParameters: {
+          'key': apiKey,
+          'op': 'getBillText',
+          'id': billId,
+        },
       );
 
       if (response.statusCode == 200) {

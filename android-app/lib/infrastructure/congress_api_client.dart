@@ -1,10 +1,13 @@
 import 'package:dio/dio.dart';
-import '../core/constants.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class CongressApiClient {
   final Dio _dio = Dio(
     BaseOptions(
-      baseUrl: AppConstants.baseUrl,
+      baseUrl: 'https://api.congress.gov/v3',
+      headers: {
+        'Content-Type': 'application/json',
+      },
     ),
   );
 
@@ -16,7 +19,12 @@ class CongressApiClient {
     int offset = 0,
   }) async {
     try {
-      String endpoint = '${AppConstants.backendCongressPath}/bill';
+      final apiKey = dotenv.env['CONGRESS_GOV_API_KEY'] ?? '';
+      if (apiKey.isEmpty) {
+        throw Exception('CONGRESS_GOV_API_KEY not found in .env file');
+      }
+
+      String endpoint = '/bill';
       if (congress != null) {
         endpoint += '/$congress';
         if (billType != null) {
@@ -27,6 +35,7 @@ class CongressApiClient {
       final response = await _dio.get(
         endpoint,
         queryParameters: {
+          'api_key': apiKey,
           if (query != null) 'query': query,
           'limit': limit,
           'offset': offset,
@@ -49,7 +58,15 @@ class CongressApiClient {
     required String billNumber,
   }) async {
     try {
-      final response = await _dio.get('${AppConstants.backendCongressPath}/bill/$congress/$billType/$billNumber');
+      final apiKey = dotenv.env['CONGRESS_GOV_API_KEY'] ?? '';
+      if (apiKey.isEmpty) {
+        throw Exception('CONGRESS_GOV_API_KEY not found in .env file');
+      }
+
+      final response = await _dio.get(
+        '/bill/$congress/$billType/$billNumber',
+        queryParameters: {'api_key': apiKey},
+      );
 
       if (response.statusCode == 200) {
         return response.data as Map<String, dynamic>;
@@ -66,8 +83,14 @@ class CongressApiClient {
     required String billNumber,
   }) async {
     try {
+      final apiKey = dotenv.env['CONGRESS_GOV_API_KEY'] ?? '';
+      if (apiKey.isEmpty) {
+        throw Exception('CONGRESS_GOV_API_KEY not found in .env file');
+      }
+
       final response = await _dio.get(
-        '${AppConstants.backendCongressPath}/bill/$congress/$billType/$billNumber/text',
+        '/bill/$congress/$billType/$billNumber/text',
+        queryParameters: {'api_key': apiKey},
       );
 
       if (response.statusCode == 200) {
@@ -84,9 +107,15 @@ class CongressApiClient {
     int limit = 20,
   }) async {
     try {
+      final apiKey = dotenv.env['CONGRESS_GOV_API_KEY'] ?? '';
+      if (apiKey.isEmpty) {
+        throw Exception('CONGRESS_GOV_API_KEY not found in .env file');
+      }
+
       final response = await _dio.get(
-        '${AppConstants.backendCongressPath}/law',
+        '/law',
         queryParameters: {
+          'api_key': apiKey,
           if (query != null) 'query': query,
           'limit': limit,
           'sort': '-updateDate',

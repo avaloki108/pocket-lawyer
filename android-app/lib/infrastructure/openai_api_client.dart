@@ -1,10 +1,10 @@
 import 'package:dio/dio.dart';
-import '../core/constants.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class OpenAiApiClient {
   final Dio _dio = Dio(
     BaseOptions(
-      baseUrl: AppConstants.baseUrl,
+      baseUrl: 'https://openrouter.ai/api/v1',
       headers: {
         'Content-Type': 'application/json',
       },
@@ -18,8 +18,20 @@ class OpenAiApiClient {
     int maxTokens = 1000,
   }) async {
     try {
+      final apiKey = dotenv.env['OPENROUTER_API_KEY'] ?? '';
+      if (apiKey.isEmpty) {
+        throw Exception('OPENROUTER_API_KEY not found in .env file');
+      }
+
       final response = await _dio.post(
-        '${AppConstants.backendOpenRouterPath}/chat',
+        '/chat/completions',
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $apiKey',
+            'HTTP-Referer': 'https://pocketlawyer.com',
+            'X-Title': 'Pocket Lawyer',
+          },
+        ),
         data: {
           'model': model,
           'messages': [
@@ -36,18 +48,17 @@ class OpenAiApiClient {
       );
 
       if (response.statusCode == 200) {
-        // Expect the backend to normalize the response
-        final content = response.data['content'] ??
-            (response.data['choices'] != null && (response.data['choices'] as List).isNotEmpty
-                ? response.data['choices'][0]['message']['content']
-                : null);
-        if (content is String) {
-          return content;
+        final choices = response.data['choices'];
+        if (choices != null && choices is List && choices.isNotEmpty) {
+          final content = choices[0]['message']['content'];
+          if (content is String) {
+            return content;
+          }
         }
       }
-      throw Exception('Failed to get response from backend OpenAI proxy');
+      throw Exception('Failed to get response from OpenRouter: ${response.statusCode}');
     } catch (e) {
-      throw Exception('OpenAI API error: $e');
+      throw Exception('OpenRouter API error: $e');
     }
   }
 }
