@@ -19,7 +19,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 version: 1.0.0+1
 
 environment:
-  sdk: ^3.9.2
+  sdk: '>=2.19.0 <4.0.0'
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -54,6 +54,9 @@ dependencies:
 
   # Environment variables
   flutter_dotenv: ^5.1.0
+
+  # Markdown rendering
+  flutter_markdown: ^0.7.4+1
 
 dev_dependencies:
   flutter_test:

@@ -16,8 +16,8 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   setUpAll(() async {
-    // Provide minimal env so missing key warnings are avoided and biometric is disabled for test.
-    dotenv.testLoad(fileInput: 'DISABLE_BIOMETRIC=true\nOPENAI_API_KEY=dummy\nLEGISCAN_API_KEY=dummy\nCONGRESS_GOV_API_KEY=dummy');
+    // Provide minimal env for tests; no secrets are needed on client.
+    dotenv.testLoad(fileInput: '');
   });
 
   testWidgets('Splash screen navigates to Home and shows menu items', (WidgetTester tester) async {

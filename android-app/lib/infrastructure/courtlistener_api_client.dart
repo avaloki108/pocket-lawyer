@@ -6,16 +6,13 @@ class CourtListenerApiClient {
 
   CourtListenerApiClient() {
     _dio = Dio(BaseOptions(
-      baseUrl: AppConstants.courtListenerBaseUrl,
-      headers: {
-        'Authorization': 'Token ${AppConstants.courtListenerApiKey}',
-      },
+      baseUrl: AppConstants.baseUrl,
       connectTimeout: const Duration(seconds: 30),
       receiveTimeout: const Duration(seconds: 30),
     ));
   }
 
-  /// Fetch case clusters from CourtListener API
+  /// Fetch case clusters from CourtListener (via backend)
   Future<Map<String, dynamic>> getCaseClusters({
     String? query,
     String? court,
@@ -24,7 +21,7 @@ class CourtListenerApiClient {
   }) async {
     try {
       final response = await _dio.get(
-        '/clusters/',
+        '${AppConstants.backendCourtListenerPath}/clusters/',
         queryParameters: {
           if (query != null) 'q': query,
           if (court != null) 'court': court,
@@ -41,7 +38,7 @@ class CourtListenerApiClient {
   /// Fetch a specific case cluster by ID
   Future<Map<String, dynamic>> getCaseCluster(int clusterId) async {
     try {
-      final response = await _dio.get('/clusters/$clusterId/');
+      final response = await _dio.get('${AppConstants.backendCourtListenerPath}/clusters/$clusterId/');
       return response.data;
     } catch (e) {
       throw Exception('Failed to fetch case cluster: $e');
@@ -59,7 +56,7 @@ class CourtListenerApiClient {
   }) async {
     try {
       final response = await _dio.get(
-        '/search/',
+        '${AppConstants.backendCourtListenerPath}/search/',
         queryParameters: {
           'q': query,
           'type': 'o',  // 'o' for opinions
@@ -79,7 +76,7 @@ class CourtListenerApiClient {
   /// Fetch docket information
   Future<Map<String, dynamic>> getDocket(int docketId) async {
     try {
-      final response = await _dio.get('/dockets/$docketId/');
+      final response = await _dio.get('${AppConstants.backendCourtListenerPath}/dockets/$docketId/');
       return response.data;
     } catch (e) {
       throw Exception('Failed to fetch docket: $e');
@@ -89,7 +86,7 @@ class CourtListenerApiClient {
   /// Fetch court information
   Future<Map<String, dynamic>> getCourt(String courtId) async {
     try {
-      final response = await _dio.get('/courts/$courtId/');
+      final response = await _dio.get('${AppConstants.backendCourtListenerPath}/courts/$courtId/');
       return response.data;
     } catch (e) {
       throw Exception('Failed to fetch court info: $e');

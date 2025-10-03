@@ -4,8 +4,7 @@ import '../core/constants.dart';
 class CongressApiClient {
   final Dio _dio = Dio(
     BaseOptions(
-      baseUrl: AppConstants.congressGovBaseUrl,
-      queryParameters: {'api_key': AppConstants.congressGovApiKey},
+      baseUrl: AppConstants.baseUrl,
     ),
   );
 
@@ -17,7 +16,7 @@ class CongressApiClient {
     int offset = 0,
   }) async {
     try {
-      String endpoint = '/bill';
+      String endpoint = '${AppConstants.backendCongressPath}/bill';
       if (congress != null) {
         endpoint += '/$congress';
         if (billType != null) {
@@ -50,7 +49,7 @@ class CongressApiClient {
     required String billNumber,
   }) async {
     try {
-      final response = await _dio.get('/bill/$congress/$billType/$billNumber');
+      final response = await _dio.get('${AppConstants.backendCongressPath}/bill/$congress/$billType/$billNumber');
 
       if (response.statusCode == 200) {
         return response.data as Map<String, dynamic>;
@@ -68,7 +67,7 @@ class CongressApiClient {
   }) async {
     try {
       final response = await _dio.get(
-        '/bill/$congress/$billType/$billNumber/text',
+        '${AppConstants.backendCongressPath}/bill/$congress/$billType/$billNumber/text',
       );
 
       if (response.statusCode == 200) {
@@ -86,7 +85,7 @@ class CongressApiClient {
   }) async {
     try {
       final response = await _dio.get(
-        '/law',
+        '${AppConstants.backendCongressPath}/law',
         queryParameters: {
           if (query != null) 'query': query,
           'limit': limit,

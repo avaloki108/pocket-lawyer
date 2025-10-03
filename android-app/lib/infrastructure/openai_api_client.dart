@@ -4,9 +4,8 @@ import '../core/constants.dart';
 class OpenAiApiClient {
   final Dio _dio = Dio(
     BaseOptions(
-      baseUrl: AppConstants.openAiBaseUrl,
+      baseUrl: AppConstants.baseUrl,
       headers: {
-        'Authorization': 'Bearer ${AppConstants.openAiApiKey}',
         'Content-Type': 'application/json',
       },
     ),
@@ -20,7 +19,7 @@ class OpenAiApiClient {
   }) async {
     try {
       final response = await _dio.post(
-        '/chat/completions',
+        '${AppConstants.backendOpenAiPath}/chat',
         data: {
           'model': model,
           'messages': [
@@ -37,12 +36,16 @@ class OpenAiApiClient {
       );
 
       if (response.statusCode == 200) {
-        final choices = response.data['choices'] as List;
-        if (choices.isNotEmpty) {
-          return choices[0]['message']['content'] as String;
+        // Expect the backend to normalize the response
+        final content = response.data['content'] ??
+            (response.data['choices'] != null && (response.data['choices'] as List).isNotEmpty
+                ? response.data['choices'][0]['message']['content']
+                : null);
+        if (content is String) {
+          return content;
         }
       }
-      throw Exception('Failed to get response from OpenAI');
+      throw Exception('Failed to get response from backend OpenAI proxy');
     } catch (e) {
       throw Exception('OpenAI API error: $e');
     }

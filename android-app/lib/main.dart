@@ -20,11 +20,6 @@ Future<void> main() async {
     } catch (_) {}
   }
 
-  final missing = AppConstants.missingRequiredKeys();
-  if (missing.isNotEmpty) {
-
-    print('[PocketLawyer][WARNING] Missing API keys: ${missing.join(', ')}. Some features may not work.');
-  }
 
   runApp(const ProviderScope(child: MyApp()));
 }
@@ -39,12 +34,27 @@ class MyApp extends StatelessWidget {
       theme: AppThemes.lightTheme,
       darkTheme: AppThemes.darkTheme,
       initialRoute: '/',
-      routes: {
-        '/': (context) => const SplashScreen(),
-        '/home': (context) => const HomeScreen(),
-        '/chat': (context) => const ChatScreen(),
-        '/prompts': (context) => const PromptsScreen(),
-        '/settings': (context) => const SettingsScreen(),
+      onGenerateRoute: (settings) {
+        // Handle routes with arguments
+        if (settings.name == '/chat') {
+          return MaterialPageRoute(
+            builder: (context) => const ChatScreen(),
+            settings: settings,
+          );
+        }
+        // Default routes
+        switch (settings.name) {
+          case '/':
+            return MaterialPageRoute(builder: (context) => const SplashScreen());
+          case '/home':
+            return MaterialPageRoute(builder: (context) => const HomeScreen());
+          case '/prompts':
+            return MaterialPageRoute(builder: (context) => const PromptsScreen());
+          case '/settings':
+            return MaterialPageRoute(builder: (context) => const SettingsScreen());
+          default:
+            return MaterialPageRoute(builder: (context) => const SplashScreen());
+        }
       },
     );
   }

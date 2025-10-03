@@ -51,3 +51,6 @@ final settingsUseCaseProvider = Provider<SettingsUseCase>((ref) {
   final storage = ref.read(secureStorageProvider);
   return SettingsUseCase(storage);
 });
+
+// State providers
+final selectedStateProvider = StateProvider<String>((ref) => 'California');

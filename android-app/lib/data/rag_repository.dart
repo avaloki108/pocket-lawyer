@@ -2,6 +2,7 @@ import 'api_client_repository.dart';
 
 abstract class RagRepository {
   Future<String> query(String prompt);
+  Future<Map<String, dynamic>> performRAGQuery(String prompt, String state);
 }
 
 // Real implementation using external APIs
@@ -12,9 +13,15 @@ class RagRepositoryImpl implements RagRepository {
 
   @override
   Future<String> query(String prompt) async {
+    final result = await performRAGQuery(prompt, '');
+    return result['content'] as String;
+  }
+
+  @override
+  Future<Map<String, dynamic>> performRAGQuery(String prompt, String state) async {
     try {
-      // Determine jurisdiction from prompt (simplified logic)
-      final jurisdiction = _extractJurisdiction(prompt);
+      // Determine jurisdiction from prompt or use provided state
+      final jurisdiction = state.isNotEmpty ? state : _extractJurisdiction(prompt);
       final legalTopic = _extractLegalTopic(prompt);
 
       // Try state laws first if jurisdiction detected
@@ -29,7 +36,17 @@ class RagRepositoryImpl implements RagRepository {
           final results = stateData['searchresult'] as List?;
           if (results != null && results.isNotEmpty) {
             final firstResult = results[0] as Map<String, dynamic>;
-            return _formatStateLawResponse(firstResult, jurisdiction);
+            return {
+              'content': _formatStateLawResponse(firstResult, jurisdiction),
+              'sources': [
+                {
+                  'citation': 'LegiScan - ${firstResult['bill_number'] ?? 'Unknown'}',
+                  'url': firstResult['url'] ?? '',
+                  'type': 'state_law',
+                }
+              ],
+              'confidence': 0.85,
+            };
           }
         }
       }
@@ -44,7 +61,17 @@ class RagRepositoryImpl implements RagRepository {
         final bills = federalData['bills'] as List?;
         if (bills != null && bills.isNotEmpty) {
           final firstBill = bills[0] as Map<String, dynamic>;
-          return _formatFederalLawResponse(firstBill);
+          return {
+            'content': _formatFederalLawResponse(firstBill),
+            'sources': [
+              {
+                'citation': 'Congress.gov - ${firstBill['number'] ?? 'Unknown'}',
+                'url': firstBill['url'] ?? '',
+                'type': 'federal_law',
+              }
+            ],
+            'confidence': 0.90,
+          };
         }
       }
 
@@ -53,10 +80,18 @@ class RagRepositoryImpl implements RagRepository {
         'Based on the following legal question, provide a comprehensive answer citing relevant laws and cases: $prompt',
       );
 
-      return aiResponse;
+      return {
+        'content': aiResponse,
+        'sources': [],
+        'confidence': 0.70,
+      };
     } catch (e) {
       // Ultimate fallback
-      return 'I apologize, but I encountered an error while researching your legal question. Please consult with a qualified attorney for personalized legal advice. Error: $e';
+      return {
+        'content': 'I apologize, but I encountered an error while researching your legal question. Please consult with a qualified attorney for personalized legal advice. Error: $e',
+        'sources': [],
+        'confidence': 0.0,
+      };
     }
   }
 

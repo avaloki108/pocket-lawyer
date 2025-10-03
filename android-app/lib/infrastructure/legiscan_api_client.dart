@@ -4,8 +4,7 @@ import '../core/constants.dart';
 class LegiScanApiClient {
   final Dio _dio = Dio(
     BaseOptions(
-      baseUrl: AppConstants.legiScanBaseUrl,
-      queryParameters: {'key': AppConstants.legiScanApiKey},
+      baseUrl: AppConstants.baseUrl,
     ),
   );
 
@@ -16,7 +15,7 @@ class LegiScanApiClient {
   }) async {
     try {
       final response = await _dio.get(
-        '',
+        AppConstants.backendLegiScanPath,
         queryParameters: {
           'op': 'getSearch',
           'state': state.toUpperCase(),
@@ -37,7 +36,7 @@ class LegiScanApiClient {
   Future<Map<String, dynamic>> getBill(int billId) async {
     try {
       final response = await _dio.get(
-        '',
+        AppConstants.backendLegiScanPath,
         queryParameters: {'op': 'getBill', 'id': billId},
       );
 
@@ -53,7 +52,7 @@ class LegiScanApiClient {
   Future<Map<String, dynamic>> getBillText(int billId) async {
     try {
       final response = await _dio.get(
-        '',
+        AppConstants.backendLegiScanPath,
         queryParameters: {'op': 'getBillText', 'id': billId},
       );
 
