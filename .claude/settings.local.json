@@ -10,7 +10,8 @@
       "Bash(cmd.exe /c launch.bat)",
       "Bash(test:*)",
       "Bash(./launch.bat)",
-      "Bash(../launch.bat)"
+      "Bash(../launch.bat)",
+      "Bash(adb:*)"
     ],
     "deny": [],
     "ask": []

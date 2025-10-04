@@ -1,19 +1,22 @@
+import java.util.Properties
+import java.io.FileInputStream
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
     id("dev.flutter.flutter-gradle-plugin")
 }
 
-def keystorePropertiesFile = rootProject.file("keystore.properties")
-def keystoreProperties = new Properties()
+val keystorePropertiesFile = rootProject.file("keystore.properties")
+val keystoreProperties = Properties()
 if (keystorePropertiesFile.exists()) {
-    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+    keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
 
 android {
     namespace = "ai.pocketlawyer.app"
-    compileSdk = 34
-ECHO is off.
+    compileSdk = 36
+
     defaultConfig {
         applicationId = "ai.pocketlawyer.app"
         minSdk = flutter.minSdkVersion
@@ -22,22 +25,31 @@ ECHO is off.
         versionName = "1.0.0"
         multiDexEnabled = true
     }
-ECHO is off.
+
     signingConfigs {
-        release {
-            keyAlias = keystoreProperties['keyAlias']
-            keyPassword = keystoreProperties['keyPassword']
-            storeFile = file(keystoreProperties['storeFile'])
-            storePassword = keystoreProperties['storePassword']
+        create("release") {
+            keyAlias = keystoreProperties.getProperty("keyAlias")
+            keyPassword = keystoreProperties.getProperty("keyPassword")
+            storeFile = file(keystoreProperties.getProperty("storeFile"))
+            storePassword = keystoreProperties.getProperty("storePassword")
         }
     }
-ECHO is off.
+
     buildTypes {
-        release {
-            signingConfig = signingConfigs.release
-            minifyEnabled = true
-            shrinkResources = true
+        getByName("release") {
+            signingConfig = signingConfigs.getByName("release")
+            isMinifyEnabled = true
+            isShrinkResources = true
         }
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+    }
+
+    kotlinOptions {
+        jvmTarget = "1.8"
     }
 }
 

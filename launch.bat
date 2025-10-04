@@ -115,7 +115,6 @@ call flutter pub add ^
     firebase_analytics:^10.8.9 ^
     firebase_crashlytics:^3.4.18 ^
     cached_network_image:^3.3.1 ^
-    app_review:^2.1.2+1 ^
     lottie:^3.1.0 ^
     confetti:^0.7.0
 
@@ -140,7 +139,7 @@ echo Creating keystore configuration...
 echo storePassword=pocket123
 echo keyPassword=pocket123
 echo keyAlias=pocket-lawyer
-echo storeFile=../pocket-lawyer.jks
+echo storeFile=../../pocket-lawyer.jks
 ) > android\keystore.properties
 
 REM 7. UPDATE BUILD.GRADLE FOR PRODUCTION
@@ -148,23 +147,23 @@ echo Configuring production build...
 (
     echo import java.util.Properties
     echo import java.io.FileInputStream
-    echo.
+    echo:
     echo plugins {
-    echo     id("com.android.application")
-    echo     id("kotlin-android")
-    echo     id("dev.flutter.flutter-gradle-plugin")
+    echo     id^("com.android.application"^)
+    echo     id^("kotlin-android"^)
+    echo     id^("dev.flutter.flutter-gradle-plugin"^)
     echo }
-    echo.
-    echo val keystorePropertiesFile = rootProject.file("keystore.properties")
-    echo val keystoreProperties = Properties()
-    echo if (keystorePropertiesFile.exists()) {
-    echo     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
+    echo:
+    echo val keystorePropertiesFile = rootProject.file^("keystore.properties"^)
+    echo val keystoreProperties = Properties^(^)
+    echo if ^(keystorePropertiesFile.exists^(^)^) {
+    echo     keystoreProperties.load^(FileInputStream^(keystorePropertiesFile^)^)
     echo }
-    echo.
+    echo:
     echo android {
     echo     namespace = "ai.pocketlawyer.app"
-    echo     compileSdk = 34
-    echo
+    echo     compileSdk = 36
+    echo:
     echo     defaultConfig {
     echo         applicationId = "ai.pocketlawyer.app"
     echo         minSdk = 23
@@ -173,31 +172,40 @@ echo Configuring production build...
     echo         versionName = "1.0.0"
     echo         multiDexEnabled = true
     echo     }
-    echo
+    echo:
     echo     signingConfigs {
-    echo         getByName("release") {
-    echo             keyAlias = keystoreProperties.getProperty("keyAlias")
-    echo             keyPassword = keystoreProperties.getProperty("keyPassword")
-    echo             storeFile = file(keystoreProperties.getProperty("storeFile"))
-    echo             storePassword = keystoreProperties.getProperty("storePassword")
+    echo         create^("release"^) {
+    echo             keyAlias = keystoreProperties.getProperty^("keyAlias"^)
+    echo             keyPassword = keystoreProperties.getProperty^("keyPassword"^)
+    echo             storeFile = file^(keystoreProperties.getProperty^("storeFile"^)^)
+    echo             storePassword = keystoreProperties.getProperty^("storePassword"^)
     echo         }
     echo     }
-    echo
+    echo:
     echo     buildTypes {
-    echo         getByName("release") {
-    echo             signingConfig = signingConfigs.getByName("release")
+    echo         getByName^("release"^) {
+    echo             signingConfig = signingConfigs.getByName^("release"^)
     echo             isMinifyEnabled = true
     echo             isShrinkResources = true
     echo         }
     echo     }
+    echo:
+    echo     compileOptions {
+    echo         sourceCompatibility = JavaVersion.VERSION_1_8
+    echo         targetCompatibility = JavaVersion.VERSION_1_8
+    echo     }
+    echo:
+    echo     kotlinOptions {
+    echo         jvmTarget = "1.8"
+    echo     }
     echo }
-    echo.
+    echo:
     echo flutter {
     echo     source = "../.."
     echo }
-    echo.
+    echo:
     echo dependencies {
-    echo     implementation("androidx.multidex:multidex:2.0.1")
+    echo     implementation^("androidx.multidex:multidex:2.0.1"^)
     echo }
 ) > android\app\build.gradle.kts
 
