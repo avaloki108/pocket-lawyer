@@ -7,7 +7,7 @@ A Flutter application providing a legal assistant interface with secure storage,
 - Home navigation to Chat, Prompts, Settings (placeholders for expansion)
 - Riverpod for state management
 - Secure storage abstraction
-- Pluggable API client repository with graceful OpenAI fallback
+- Pluggable API client repository with AI (OpenRouter primary, Ollama local fallback)
 - .env + `--dart-define` hybrid configuration for secrets
 
 ## Environment Configuration
@@ -23,31 +23,45 @@ copy .env.example .env  (Windows)
 # OR
 cp .env.example .env    (macOS/Linux)
 ```
-Edit `.env`:
+Edit `.env` (minimal example):
 ```
-OPENAI_API_KEY=sk-your-key
 LEGISCAN_API_KEY=your-legiscan-key
 CONGRESS_GOV_API_KEY=your-congress-key
-PINECONE_API_KEY=optional-pinecone
-HARVARD_CAP_API_KEY=optional-harvard-cap
+OPENROUTER_API_KEY=your-openrouter-key   # Leave blank to force local Ollama
+OPENROUTER_MODEL=openai/gpt-4o-mini      # Optional override
+OLLAMA_HOST=http://127.0.0.1:11434       # Local default
+OLLAMA_MODEL=gpt-oss:latest              # Model you pulled via Ollama
 DISABLE_BIOMETRIC=false
 ```
+If `OPENROUTER_API_KEY` is blank, the app automatically falls back to calling your local Ollama server using `OLLAMA_MODEL`.
+
 `DISABLE_BIOMETRIC=true` can be set for simulators/emulators or automated tests.
 
 ### 2. Using `--dart-define`
 You can override (or replace) `.env` values at runtime:
 ```
 flutter run ^
-  --dart-define=OPENAI_API_KEY=sk-your-key ^
   --dart-define=LEGISCAN_API_KEY=your-legiscan-key ^
-  --dart-define=CONGRESS_GOV_API_KEY=your-congress-key
+  --dart-define=CONGRESS_GOV_API_KEY=your-congress-key ^
+  --dart-define=OPENROUTER_API_KEY=sk-or-key
 ```
 Precedence: dart-define > .env file > empty.
+
+### AI Model Resolution Logic
+1. If `OPENROUTER_API_KEY` is set: uses OpenRouter Chat Completions with `OPENROUTER_MODEL` (default internal fallback if blank).
+2. Else: attempts local Ollama at `OLLAMA_HOST` using `OLLAMA_MODEL` (default `gpt-oss:latest`).
+3. Errors bubble up with a friendly fallback message if both fail.
+
+### Setting Up Local Ollama (Windows)
+1. Install Ollama (https://ollama.com/) and launch: `ollama serve`
+2. Pull model: `ollama pull gpt-oss:latest` (or whichever you want, e.g. `llama3`)
+3. Confirm running: `ollama list`
+4. Leave `OPENROUTER_API_KEY` blank in `.env` to force local usage.
 
 ### Security Notes
 - Never commit a real `.env` (already ignored in root `.gitignore`).
 - Treat anything inside a distributed mobile binary as recoverable by users; do not ship production secrets inside `.env` for release builds—prefer server-side proxying or ephemeral tokens.
-- Consider moving OpenAI access through your own backend to apply policy controls, logging, and rate limiting.
+- Consider routing OpenRouter/OpenAI access through your own backend to apply policy controls, logging, and rate limiting.
 
 ## Running the App (Windows cmd.exe)
 From repository root:
@@ -56,9 +70,15 @@ cd android-app
 flutter pub get
 flutter run
 ```
-Optionally with biometric disabled for faster dev:
+Force local Ollama (ensure OPENROUTER_API_KEY is blank in `.env`):
 ```
 flutter run --dart-define=DISABLE_BIOMETRIC=true
+```
+Explicitly test OpenRouter (overrides blank in `.env`):
+```
+flutter run ^
+  --dart-define=OPENROUTER_API_KEY=sk-or-key ^
+  --dart-define=DISABLE_BIOMETRIC=true
 ```
 
 ## Running Tests
@@ -78,17 +98,20 @@ The provided widget test:
 ## Troubleshooting
 | Issue | Resolution |
 |-------|------------|
-| Missing API key warning in console | Add to `.env` or pass via `--dart-define` |
+| Missing API key warning | Add to `.env` or pass via `--dart-define` |
+| Local Ollama not responding | Ensure `ollama serve` is running and `OLLAMA_HOST` matches |
+| Model not found (Ollama) | Run `ollama pull <model>` |
 | Biometric dialog blocks tests | Set `DISABLE_BIOMETRIC=true` |
 | Keys not updating after change | `flutter clean` then restart, or ensure not overridden by dart-define |
-| OpenAI fallback errors | Check network connectivity and key validity |
+| AI summary missing | Check network (OpenRouter) or local model availability (Ollama) |
 
 ## Future Enhancements (Suggested)
-- Implement actual Pinecone vector search client using `pineconeApiKey`
-- Add Harvard CAP case law retrieval using `harvardCapApiKey`
-- Introduce caching & offline persistence (Hive integration placeholder)
-- Add structured logging + error reporting
-- Replace direct OpenAI calls with a backend mediator service
+- Implement vector search (Pinecone) to augment prompts (RAG)
+- Case law integration (CourtListener / Harvard CAP) with proper citation extraction
+- Caching & offline persistence (Hive)
+- Structured logging + error reporting
+- Backend mediator service for policy enforcement
+- Streaming token UI updates for chat
 
 ## License
 (Define your license here – currently unspecified.)

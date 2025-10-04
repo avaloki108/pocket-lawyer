@@ -5,27 +5,25 @@ import '../domain/settings_usecase.dart';
 import '../data/rag_repository.dart';
 import '../data/secure_storage_repository.dart';
 import '../data/api_client_repository.dart';
-import '../infrastructure/openai_api_client.dart';
+import '../infrastructure/open_router_api_client.dart';
 import '../infrastructure/legiscan_api_client.dart';
 import '../infrastructure/congress_api_client.dart';
 
-// Infrastructure providers
-final openAiClientProvider = Provider<OpenAiApiClient>(
-  (ref) => OpenAiApiClient(),
+final openRouterClientProvider = Provider<OpenRouterApiClient>(
+      (ref) => OpenRouterApiClient(),
 );
 final legiScanClientProvider = Provider<LegiScanApiClient>(
-  (ref) => LegiScanApiClient(),
+      (ref) => LegiScanApiClient(),
 );
 final congressClientProvider = Provider<CongressApiClient>(
-  (ref) => CongressApiClient(),
+      (ref) => CongressApiClient(),
 );
 
-// Repository providers
 final apiClientRepositoryProvider = Provider<ApiClientRepository>((ref) {
-  final openAiClient = ref.read(openAiClientProvider);
+  final openRouterClient = ref.read(openRouterClientProvider);
   final legiScanClient = ref.read(legiScanClientProvider);
   final congressClient = ref.read(congressClientProvider);
-  return ApiClientRepository(openAiClient, legiScanClient, congressClient);
+  return ApiClientRepository(openRouterClient, legiScanClient, congressClient);
 });
 
 final ragRepositoryProvider = Provider<RagRepository>((ref) {
@@ -34,17 +32,16 @@ final ragRepositoryProvider = Provider<RagRepository>((ref) {
 });
 
 final secureStorageProvider = Provider<SecureStorageRepository>(
-  (ref) => SecureStorageRepository(),
+      (ref) => SecureStorageRepository(),
 );
 
-// Use-case providers
 final chatUseCaseProvider = Provider<ChatUseCase>((ref) {
   final repo = ref.read(ragRepositoryProvider);
   return ChatUseCase(repo);
 });
 
 final promptsUseCaseProvider = Provider<PromptsUseCase>(
-  (ref) => PromptsUseCase(),
+      (ref) => PromptsUseCase(),
 );
 
 final settingsUseCaseProvider = Provider<SettingsUseCase>((ref) {
@@ -52,5 +49,20 @@ final settingsUseCaseProvider = Provider<SettingsUseCase>((ref) {
   return SettingsUseCase(storage);
 });
 
-// State providers
-final selectedStateProvider = StateProvider<String>((ref) => 'California');
+final selectedStateProvider = StateProvider<String>((ref) => 'CO');
+
+const stateNameToAbbr = {
+  'California': 'CA',
+  'Colorado': 'CO',
+  'New Mexico': 'NM',
+  'New York': 'NY',
+  'Texas': 'TX',
+};
+
+const abbrToStateName = {
+  'CA': 'California',
+  'CO': 'Colorado',
+  'NM': 'New Mexico',
+  'NY': 'New York',
+  'TX': 'Texas',
+};

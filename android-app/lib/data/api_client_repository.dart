@@ -14,6 +14,7 @@ class ApiClientRepository {
   );
 
   /// Retrieve state statutes and regulations, augmented by LLM.
+  /// Returns the raw LegiScan response with an added 'ai_summary' field when available.
   Future<Map<String, dynamic>> getStateLaws({
     required String state,
     required String legalTopic,
@@ -24,11 +25,15 @@ class ApiClientRepository {
         state: state,
         query: searchQuery != null ? '$legalTopic $searchQuery' : legalTopic,
       );
-      
-      final prompt = 'Based on the following data, provide a comprehensive summary of $legalTopic laws in $state: $lawApiResponse. Explain in simple terms, include relevant statutes, and cite sources.';
-      final aiSummary = await _openRouterClient.generate(prompt: prompt);
-
-      return {'structured_data': lawApiResponse, 'ai_summary': aiSummary};
+      final enriched = Map<String, dynamic>.from(lawApiResponse);
+      try {
+        final prompt = 'Based on the following data, provide a comprehensive summary of $legalTopic laws in $state: $lawApiResponse. Explain in simple terms, include relevant statutes, and cite sources.';
+        final aiSummary = await _openRouterClient.generate(prompt: prompt);
+        enriched['ai_summary'] = aiSummary;
+      } catch (_) {
+        // Ignore AI summary failure, still return structured data.
+      }
+      return enriched;
     } catch (e) {
       // If structured API fails, fallback to pure LLM.
       final prompt =
@@ -39,6 +44,7 @@ class ApiClientRepository {
   }
 
   /// Retrieve federal statutes and regulations, augmented by LLM.
+  /// Returns the raw Congress.gov style response with an added 'ai_summary' field when available.
   Future<Map<String, dynamic>> getFederalLaws({
     required String legalTopic,
     String? searchQuery,
@@ -47,11 +53,13 @@ class ApiClientRepository {
       final lawApiResponse = await _congressClient.searchLaws(
         query: searchQuery != null ? '$legalTopic $searchQuery' : legalTopic,
       );
-
-      final prompt = 'Based on the following data, provide a comprehensive summary of federal $legalTopic laws: $lawApiResponse. Explain in simple terms, include relevant statutes, and cite sources.';
-      final aiSummary = await _openRouterClient.generate(prompt: prompt);
-      
-      return {'structured_data': lawApiResponse, 'ai_summary': aiSummary};
+      final enriched = Map<String, dynamic>.from(lawApiResponse);
+      try {
+        final prompt = 'Based on the following data, provide a comprehensive summary of federal $legalTopic laws: $lawApiResponse. Explain in simple terms, include relevant statutes, and cite sources.';
+        final aiSummary = await _openRouterClient.generate(prompt: prompt);
+        enriched['ai_summary'] = aiSummary;
+      } catch (_) {}
+      return enriched;
     } catch (e) {
       // If structured API fails, fallback to pure LLM.
       final prompt =
@@ -85,7 +93,7 @@ class ApiClientRepository {
         if (matchedAbbr.isNotEmpty) {
           jurisdiction = matchedAbbr;
         } else {
-          jurisdiction = 'federal'; // Default to federal if no state is obvious
+          jurisdiction = 'federal';
         }
       }
 
@@ -93,19 +101,22 @@ class ApiClientRepository {
       String apiSource;
 
       if (jurisdiction != 'federal') {
-        lawApiResponse = await _legiScanClient.getStateLaws(state: jurisdiction!, query: citation);
+        lawApiResponse = await _legiScanClient.getStateLaws(state: jurisdiction, query: citation);
         apiSource = 'LegiScan';
       } else {
         lawApiResponse = await _congressClient.searchLaws(query: citation);
         apiSource = 'Congress.gov';
       }
 
-      final prompt = 'Based on the following data from $apiSource, provide a detailed explanation of the law or citation "$citation": $lawApiResponse. Explain its meaning and implications in simple terms.';
-      final aiSummary = await _openRouterClient.generate(prompt: prompt);
+      final enriched = Map<String, dynamic>.from(lawApiResponse);
+      try {
+        final prompt = 'Based on the following data from $apiSource, provide a detailed explanation of the law or citation "$citation": $lawApiResponse. Explain its meaning and implications in simple terms.';
+        final aiSummary = await _openRouterClient.generate(prompt: prompt);
+        enriched['ai_summary'] = aiSummary;
+      } catch (_) {}
 
-      return {'structured_data': lawApiResponse, 'ai_summary': aiSummary};
+      return enriched;
     } catch (e) {
-      // If structured API fails, fallback to pure LLM.
       final prompt =
           'Provide the text and explanation of citation: $citation${jurisdiction != null ? ' from $jurisdiction' : ''}.';
       final aiResponse = await _openRouterClient.generate(prompt: prompt);
@@ -113,6 +124,7 @@ class ApiClientRepository {
     }
   }
 
-  /// Legacy method, now pointing to OpenRouter.
+  /// Legacy method names kept for backward compatibility.
   Future<String> queryOpenRouter(String prompt) => _openRouterClient.generate(prompt: prompt);
+  Future<String> queryOpenAi(String prompt) => _openRouterClient.generate(prompt: prompt);
 }

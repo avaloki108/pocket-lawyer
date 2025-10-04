@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../core/biometric_service.dart';
-import '../core/accessibility_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -12,7 +11,6 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen> {
   final BiometricService _biometricService = BiometricService();
-  final AccessibilityService _accessibilityService = AccessibilityService();
   bool _navigated = false;
 
   @override
@@ -37,17 +35,13 @@ class _SplashScreenState extends State<SplashScreen> {
     final isAvailable = await _biometricService.isBiometricAvailable();
 
     if (isAvailable) {
-      _accessibilityService.announce('Biometric authentication required');
-
       final authenticated = await _biometricService.authenticate(
         localizedReason: 'Authenticate to access Pocket Lawyer',
       );
 
       if (authenticated) {
-        _accessibilityService.announce('Authentication successful');
         await _goHome();
       } else {
-        _accessibilityService.announce('Authentication failed');
         _showAuthFailedDialog();
       }
     } else {
@@ -65,7 +59,7 @@ class _SplashScreenState extends State<SplashScreen> {
           TextButton(
             onPressed: () {
               Navigator.of(context).pop();
-              _checkBiometricAuth(); // Retry
+              _checkBiometricAuth();
             },
             child: const Text('Retry'),
           ),
@@ -77,39 +71,32 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Colors.blue, Colors.blueAccent],
-          ),
-        ),
-        child: const Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.security, size: 80, color: Colors.white),
-              SizedBox(height: 24),
-              Text(
-                'Pocket Lawyer',
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
+      backgroundColor: Colors.black,
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Logo
+            Image.asset(
+              'assets/images/logo.png',
+              width: 200,
+              height: 200,
+            ),
+            const SizedBox(height: 40),
+            // Loading indicator
+            const CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFD4AF37)),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'Authenticating...',
+              style: TextStyle(
+                fontSize: 16,
+                color: Color(0xFFD4AF37),
+                fontWeight: FontWeight.w500,
               ),
-              SizedBox(height: 16),
-              CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-              ),
-              SizedBox(height: 16),
-              Text(
-                'Authenticating...',
-                style: TextStyle(fontSize: 16, color: Colors.white),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

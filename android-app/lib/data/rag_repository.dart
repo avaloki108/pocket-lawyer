@@ -32,22 +32,39 @@ class RagRepositoryImpl implements RagRepository {
           searchQuery: prompt,
         );
 
-        if (stateData.containsKey('searchresult')) {
-          final results = stateData['searchresult'] as List?;
-          if (results != null && results.isNotEmpty) {
-            final firstResult = results[0] as Map<String, dynamic>;
-            return {
-              'content': _formatStateLawResponse(firstResult, jurisdiction),
-              'sources': [
-                {
-                  'citation': 'LegiScan - ${firstResult['bill_number'] ?? 'Unknown'}',
-                  'url': firstResult['url'] ?? '',
-                  'type': 'state_law',
-                }
-              ],
-              'confidence': 0.85,
-            };
-          }
+        // Accept several possible shapes from LegiScan
+        dynamic possibleResults;
+        if (stateData['searchresult'] is List) {
+          possibleResults = stateData['searchresult'];
+        } else if (stateData['searchresult'] is Map) {
+          final sr = stateData['searchresult'] as Map;
+            if (sr['results'] is List) {
+              possibleResults = sr['results'];
+            }
+        }
+
+        if (possibleResults is List && possibleResults.isNotEmpty) {
+          final firstResult = possibleResults.first as Map<String, dynamic>;
+          return {
+            'content': _formatStateLawResponse(firstResult, jurisdiction, stateData['ai_summary'] as String?),
+            'sources': [
+              {
+                'citation': 'LegiScan - ${firstResult['bill_number'] ?? firstResult['number'] ?? 'Unknown'}',
+                'url': firstResult['url'] ?? '',
+                'type': 'state_law',
+              }
+            ],
+            'confidence': 0.85,
+          };
+        }
+
+        // If only AI summary came back
+        if (stateData['ai_summary'] is String) {
+          return {
+            'content': stateData['ai_summary'],
+            'sources': [],
+            'confidence': 0.65,
+          };
         }
       }
 
@@ -62,7 +79,7 @@ class RagRepositoryImpl implements RagRepository {
         if (bills != null && bills.isNotEmpty) {
           final firstBill = bills[0] as Map<String, dynamic>;
           return {
-            'content': _formatFederalLawResponse(firstBill),
+            'content': _formatFederalLawResponse(firstBill, federalData['ai_summary'] as String?),
             'sources': [
               {
                 'citation': 'Congress.gov - ${firstBill['number'] ?? 'Unknown'}',
@@ -75,7 +92,15 @@ class RagRepositoryImpl implements RagRepository {
         }
       }
 
-      // Fallback to OpenAI
+      if (federalData['ai_summary'] is String) {
+        return {
+          'content': federalData['ai_summary'],
+          'sources': [],
+          'confidence': 0.70,
+        };
+      }
+
+      // Fallback to OpenRouter (legacy method alias)
       final aiResponse = await _apiClient.queryOpenAi(
         'Based on the following legal question, provide a comprehensive answer citing relevant laws and cases: $prompt',
       );
@@ -83,7 +108,7 @@ class RagRepositoryImpl implements RagRepository {
       return {
         'content': aiResponse,
         'sources': [],
-        'confidence': 0.70,
+        'confidence': 0.60,
       };
     } catch (e) {
       // Ultimate fallback
@@ -96,11 +121,12 @@ class RagRepositoryImpl implements RagRepository {
   }
 
   String? _extractJurisdiction(String prompt) {
-    // Simple extraction - look for state names or abbreviations
+    // Case-insensitive extraction - look for state names or abbreviations
     final statePattern = RegExp(
-      r'\b(California|New York|Texas|Florida|Nevada|Arizona|Colorado|Utah|Washington|Oregon|Idaho|Montana|Wyoming|North Dakota|South Dakota|Nebraska|Kansas|Oklahoma|Arkansas|Louisiana|Mississippi|Alabama|Tennessee|Kentucky|Indiana|Illinois|Wisconsin|Minnesota|Iowa|Missouri|Arkansas|Louisiana|Mississippi|Alabama|Tennessee|Kentucky|Indiana|Illinois|Wisconsin|Minnesota|Iowa|Missouri|North Carolina|South Carolina|Georgia|Florida|Virginia|West Virginia|Maryland|Delaware|New Jersey|Pennsylvania|Ohio|Michigan|Connecticut|Rhode Island|Massachusetts|Vermont|New Hampshire|Maine|Hawaii|Alaska)\b|\b([A-Z]{2})\b',
+      r'\b(California|New York|Texas|Florida|Nevada|Arizona|Colorado|Utah|Washington|Oregon|Idaho|Montana|Wyoming|North Dakota|South Dakota|Nebraska|Kansas|Oklahoma|Arkansas|Louisiana|Mississippi|Alabama|Tennessee|Kentucky|Indiana|Illinois|Wisconsin|Minnesota|Iowa|Missouri|North Carolina|South Carolina|Georgia|Virginia|West Virginia|Maryland|Delaware|New Jersey|Pennsylvania|Ohio|Michigan|Connecticut|Rhode Island|Massachusetts|Vermont|New Hampshire|Maine|Hawaii|Alaska)\b|\b([A-Z]{2})\b',
+      caseSensitive: false,
     );
-    final match = statePattern.firstMatch(prompt.toLowerCase());
+    final match = statePattern.firstMatch(prompt);
     if (match != null) {
       return match.group(1) ?? match.group(2);
     }
@@ -136,42 +162,50 @@ class RagRepositoryImpl implements RagRepository {
         jurisdiction.toLowerCase() == 'united states';
   }
 
-  String _formatStateLawResponse(Map<String, dynamic> result, String state) {
-    final title = result['title'] ?? 'Unknown Title';
-    final description = result['description'] ?? '';
-    final billNumber = result['bill_number'] ?? '';
+  String _formatStateLawResponse(Map<String, dynamic> result, String state, String? summary) {
+    final title = result['title'] ?? result['name'] ?? 'Unknown Title';
+    final description = result['description'] ?? result['summary'] ?? '';
+    final billNumber = result['bill_number'] ?? result['number'] ?? '';
 
-    return '''
-Based on $state law:
-
-**Bill: $billNumber**
-**Title:** $title
-
-**Description:** $description
-
-*Note: This is general information based on legislative data. For personalized legal advice, please consult with a qualified attorney licensed in $state.*
-
-**Source:** LegiScan API - State of $state Legislature
-''';
+    final buffer = StringBuffer();
+    buffer.writeln('Based on $state law:');
+    buffer.writeln();
+    buffer.writeln('Bill: $billNumber');
+    buffer.writeln('Title: $title');
+    if (description.isNotEmpty) {
+      buffer.writeln();
+      buffer.writeln('Description: $description');
+    }
+    if (summary != null) {
+      buffer.writeln();
+      buffer.writeln('AI Summary:');
+      buffer.writeln(summary);
+    }
+    buffer.writeln();
+    buffer.writeln('Disclaimer: This is general information based on legislative data. Not legal advice.');
+    return buffer.toString();
   }
 
-  String _formatFederalLawResponse(Map<String, dynamic> bill) {
+  String _formatFederalLawResponse(Map<String, dynamic> bill, String? summary) {
     final title = bill['title'] ?? 'Unknown Title';
     final number = bill['number'] ?? '';
     final congress = bill['congress'] ?? '';
-    final originChamber = bill['originChamber'] ?? '';
+    final originChamber = bill['originChamber'] ?? bill['chamber'] ?? '';
 
-    return '''
-Based on federal law:
-
-**Bill:** $number
-**Congress:** $congress
-**Chamber:** $originChamber
-**Title:** $title
-
-*Note: This is general information based on federal legislative data. For personalized legal advice, please consult with a qualified attorney.*
-
-**Source:** Congress.gov - U.S. Congress
-''';
+    final buffer = StringBuffer();
+    buffer.writeln('Based on federal law:');
+    buffer.writeln();
+    buffer.writeln('Bill: $number');
+    if (congress.toString().isNotEmpty) buffer.writeln('Congress: $congress');
+    if (originChamber.toString().isNotEmpty) buffer.writeln('Chamber: $originChamber');
+    buffer.writeln('Title: $title');
+    if (summary != null) {
+      buffer.writeln();
+      buffer.writeln('AI Summary:');
+      buffer.writeln(summary);
+    }
+    buffer.writeln();
+    buffer.writeln('Disclaimer: This is general information based on federal legislative data. Not legal advice.');
+    return buffer.toString();
   }
 }
