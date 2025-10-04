@@ -1,4 +1,4 @@
-package com.example.android_app
+package ai.pocketlawyer.app
 
 import io.flutter.embedding.android.FlutterActivity
 

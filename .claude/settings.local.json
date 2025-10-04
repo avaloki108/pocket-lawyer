@@ -4,7 +4,13 @@
       "Bash(dir:*)",
       "Bash(flutter:*)",
       "Read(//c/Users/jason/AppData/Local/Android/sdk/**)",
-      "Bash(rd:*)"
+      "Bash(rd:*)",
+      "Bash(launch.bat)",
+      "Bash(cmd.exe /c \"C:\\Users\\jason\\AndroidStudioProjects\\pocket-lawyer\\launch.bat\")",
+      "Bash(cmd.exe /c launch.bat)",
+      "Bash(test:*)",
+      "Bash(./launch.bat)",
+      "Bash(../launch.bat)"
     ],
     "deny": [],
     "ask": []
