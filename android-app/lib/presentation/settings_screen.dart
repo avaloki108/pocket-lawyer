@@ -333,9 +333,10 @@ class _ViralGrowthCardState extends State<_ViralGrowthCard> {
                   child: ElevatedButton.icon(
                     onPressed: () async {
                       await _viralService.shareApp();
-                      if (!mounted) return;
-                      _viralService.showShareSuccessDialog(context);
-                      _loadReferralData();
+                      if (mounted) {
+                        _viralService.showShareSuccessDialog(context);
+                        _loadReferralData();
+                      }
                     },
                     icon: const Icon(Icons.share),
                     label: const Text('Share App'),
