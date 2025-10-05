@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import '../infrastructure/congress_api_client.dart';
 import '../infrastructure/deepseek_api_client.dart';
 import '../infrastructure/legiscan_api_client.dart';
@@ -40,7 +42,7 @@ class ApiClientRepository {
           enriched['ai_summary'] = aiSummary;
         } catch (e) {
           // Ignore AI summary failure, still return structured data.
-          print('AI summary generation failed: $e');
+          debugPrint('AI summary generation failed: $e');
         }
       }
       return enriched;
@@ -81,7 +83,7 @@ class ApiClientRepository {
           final aiSummary = await _openRouterClient.generate(prompt: prompt);
           enriched['ai_summary'] = aiSummary;
         } catch (e) {
-            print('AI summary generation failed: $e');
+            debugPrint('AI summary generation failed: $e');
         }
       }
       return enriched;
@@ -158,7 +160,7 @@ class ApiClientRepository {
           final aiSummary = await _openRouterClient.generate(prompt: prompt);
           enriched['ai_summary'] = aiSummary;
         } catch (e) {
-            print('AI summary generation failed: $e');
+            debugPrint('AI summary generation failed: $e');
         }
       }
 

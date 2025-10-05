@@ -224,14 +224,13 @@ class _ViralGrowthCardState extends State<_ViralGrowthCard> {
 
   Future<void> _copyReferralCode() async {
     await Clipboard.setData(ClipboardData(text: _referralCode));
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Referral code copied to clipboard!'),
-          duration: Duration(seconds: 2),
-        ),
-      );
-    }
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Referral code copied to clipboard!'),
+        duration: Duration(seconds: 2),
+      ),
+    );
   }
 
   @override
@@ -334,10 +333,9 @@ class _ViralGrowthCardState extends State<_ViralGrowthCard> {
                   child: ElevatedButton.icon(
                     onPressed: () async {
                       await _viralService.shareApp();
-                      if (mounted) {
-                        _viralService.showShareSuccessDialog(context);
-                        _loadReferralData();
-                      }
+                      if (!mounted) return;
+                      _viralService.showShareSuccessDialog(context);
+                      _loadReferralData();
                     },
                     icon: const Icon(Icons.share),
                     label: const Text('Share App'),
@@ -358,7 +356,7 @@ class _ViralGrowthCardState extends State<_ViralGrowthCard> {
                     label: const Text('Rate Us'),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: const Color(0xFF5D5CDE),
-                      side: const BorderSide(color: Color(0xFF5D5CDE)),
+                      side: const BorderSide(color: const Color(0xFF5D5CDE)),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                   ),

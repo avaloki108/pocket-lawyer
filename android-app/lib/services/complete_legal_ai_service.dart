@@ -1,6 +1,8 @@
 // lib/services/complete_legal_ai_service.dart
 // FULL INTEGRATION WITH ALL YOUR LAW LIBRARY APIs + LLM PROVIDERS
 
+import 'package:flutter/foundation.dart';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
@@ -158,7 +160,7 @@ class CompleteLegalAIService {
         };
       }
     } catch (e) {
-        print('Error fetching bill details: $e');
+        debugPrint('Error fetching bill details: $e');
     }
     return null;
   }
@@ -416,7 +418,7 @@ ${citations.join('\n')}
         return response.data['choices'][0]['message']['content'];
       }
     } catch (e) {
-        print('OpenAI fallback failed: $e');
+        debugPrint('OpenAI fallback failed: $e');
     }
 
     return 'Analysis temporarily unavailable.';
