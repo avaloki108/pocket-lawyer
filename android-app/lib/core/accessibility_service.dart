@@ -81,10 +81,10 @@ class AccessibilityService {
   /// Get appropriate font size based on accessibility preferences
   double getAccessibleFontSize(BuildContext context, {double baseSize = 16}) {
     final mediaQuery = MediaQuery.of(context);
-    final textScaleFactor = mediaQuery.textScaleFactor;
+    final textScaler = mediaQuery.textScaler;
 
     // Ensure minimum readable size
-    return (baseSize * textScaleFactor).clamp(14.0, 24.0);
+    return textScaler.scale(baseSize).clamp(14.0, 24.0);
   }
 
   /// Create focusable widget with custom focus behavior

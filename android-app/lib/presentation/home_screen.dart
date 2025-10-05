@@ -20,7 +20,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     ChatScreen(),
     PromptsScreen(),
     SettingsScreen(),
-    BottomNavigationBarItem(icon: Icon(Icons.quiz), label: 'Quiz'),
+    // Placeholder for the fourth screen if you have one.
+    // For now, let's just use a simple centered text.
+    Center(child: Text("Quiz Screen")),
   ];
 
   void _onItemTapped(int index) => setState(() => _selectedIndex = index);
@@ -51,18 +53,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               BottomNavigationBarItem(icon: Icon(Icons.chat_bubble_outline), activeIcon: Icon(Icons.chat_bubble), label: 'Chat'),
               BottomNavigationBarItem(icon: Icon(Icons.library_books_outlined), activeIcon: Icon(Icons.library_books), label: 'Prompts'),
               BottomNavigationBarItem(icon: Icon(Icons.settings_outlined), activeIcon: Icon(Icons.settings), label: 'Config'),
+              BottomNavigationBarItem(icon: Icon(Icons.quiz), label: 'Quiz'),
             ],
           ),
           Container(
             padding: const EdgeInsets.symmetric(vertical: 8),
             decoration: BoxDecoration(
               color: Theme.of(context).bottomNavigationBarTheme.backgroundColor ?? Colors.white,
-              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, -2))],
+              boxShadow: [BoxShadow(color: const Color.fromRGBO(0, 0, 0, 0.05), blurRadius: 4, offset: const Offset(0, -2))],
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: List.generate(
-                3,
+                4, // Increased to 4 to match the number of items
                     (index) => Container(
                   width: 8,
                   height: 8,

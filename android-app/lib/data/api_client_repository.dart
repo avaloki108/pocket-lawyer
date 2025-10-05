@@ -40,6 +40,7 @@ class ApiClientRepository {
           enriched['ai_summary'] = aiSummary;
         } catch (e) {
           // Ignore AI summary failure, still return structured data.
+          print('AI summary generation failed: $e');
         }
       }
       return enriched;
@@ -79,7 +80,9 @@ class ApiClientRepository {
           final prompt = 'Based on the following data, provide a comprehensive summary of federal $legalTopic laws: $lawApiResponse. Explain in simple terms, include relevant statutes, and cite sources.';
           final aiSummary = await _openRouterClient.generate(prompt: prompt);
           enriched['ai_summary'] = aiSummary;
-        } catch (e) {}
+        } catch (e) {
+            print('AI summary generation failed: $e');
+        }
       }
       return enriched;
     } catch (e) {
@@ -154,7 +157,9 @@ class ApiClientRepository {
           final prompt = 'Based on the following data from $apiSource, provide a detailed explanation of the law or citation "$citation": $lawApiResponse. Explain its meaning and implications in simple terms.';
           final aiSummary = await _openRouterClient.generate(prompt: prompt);
           enriched['ai_summary'] = aiSummary;
-        } catch (e) {}
+        } catch (e) {
+            print('AI summary generation failed: $e');
+        }
       }
 
       return enriched;

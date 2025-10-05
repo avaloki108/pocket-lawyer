@@ -1,7 +1,6 @@
-import 'package:dio/dio.dart';
 
 class StateStatuteApiClient {
-  final Dio _dio = Dio();
+  // final Dio _dio = Dio();
 
   Future<String> getStatute(String state, String citation) async {
     // Placeholder for state statute API

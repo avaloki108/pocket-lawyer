@@ -26,7 +26,9 @@ class _SplashScreenState extends State<SplashScreen> {
     _navigated = true;
     // 10 000 ms = 10 seconds
     await Future.delayed(const Duration(milliseconds: 500));
-    Navigator.of(context).pushReplacementNamed('/home');
+    if (mounted) {
+      Navigator.of(context).pushReplacementNamed('/home');
+    }
   }
 
   Future<void> _checkBiometricAuth() async {

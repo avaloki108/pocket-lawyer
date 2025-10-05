@@ -158,6 +158,7 @@ class CompleteLegalAIService {
         };
       }
     } catch (e) {
+        print('Error fetching bill details: $e');
     }
     return null;
   }
@@ -415,6 +416,7 @@ ${citations.join('\n')}
         return response.data['choices'][0]['message']['content'];
       }
     } catch (e) {
+        print('OpenAI fallback failed: $e');
     }
 
     return 'Analysis temporarily unavailable.';

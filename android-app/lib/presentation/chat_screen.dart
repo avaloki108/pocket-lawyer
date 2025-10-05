@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../domain/models/chat_message.dart';
 import '../domain/models/legal_source.dart';
 import 'providers.dart';
-import 'referral_service.dart';
 
 class ChatScreen extends ConsumerStatefulWidget {
   const ChatScreen({super.key});
@@ -222,7 +221,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               border: Border(top: BorderSide(color: Colors.grey.shade300)),
               boxShadow: [
                 BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Color.fromRGBO(0, 0, 0, 0.05),
                     blurRadius: 4,
                     offset: const Offset(0, -2))
               ],

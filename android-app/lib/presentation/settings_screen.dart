@@ -214,10 +214,12 @@ class _ViralGrowthCardState extends State<_ViralGrowthCard> {
   Future<void> _loadReferralData() async {
     final code = await _viralService.getReferralCode();
     final stats = await _viralService.getReferralStats();
-    setState(() {
-      _referralCode = code;
-      _stats = stats;
-    });
+    if (mounted) {
+      setState(() {
+        _referralCode = code;
+        _stats = stats;
+      });
+    }
   }
 
   Future<void> _copyReferralCode() async {
@@ -251,14 +253,14 @@ class _ViralGrowthCardState extends State<_ViralGrowthCard> {
               ],
             ),
             const SizedBox(height: 16),
-            
+
             // Referral Code Section
             Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [const Color(0xFF5D5CDE).withOpacity(0.1), Colors.purple.shade50],
+                  colors: [const Color(0xFF5D5CDE).withAlpha(25), Colors.purple.shade50],
                 ),
-                border: Border.all(color: const Color(0xFF5D5CDE).withOpacity(0.3)),
+                border: Border.all(color: const Color(0xFF5D5CDE).withAlpha(77)),
                 borderRadius: BorderRadius.circular(8),
               ),
               padding: const EdgeInsets.all(12),
@@ -298,9 +300,9 @@ class _ViralGrowthCardState extends State<_ViralGrowthCard> {
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             // Reward Info
             Container(
               padding: const EdgeInsets.all(12),
@@ -322,9 +324,9 @@ class _ViralGrowthCardState extends State<_ViralGrowthCard> {
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             // Action Buttons
             Row(
               children: [
@@ -332,9 +334,10 @@ class _ViralGrowthCardState extends State<_ViralGrowthCard> {
                   child: ElevatedButton.icon(
                     onPressed: () async {
                       await _viralService.shareApp();
-                      if (!mounted) return;
-                      _viralService.showShareSuccessDialog(context);
-                      _loadReferralData();
+                      if (mounted) {
+                        _viralService.showShareSuccessDialog(context);
+                        _loadReferralData();
+                      }
                     },
                     icon: const Icon(Icons.share),
                     label: const Text('Share App'),
@@ -348,8 +351,8 @@ class _ViralGrowthCardState extends State<_ViralGrowthCard> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: OutlinedButton.icon(
-                    onPressed: () async {
-                      await _viralService.requestReview(force: true);
+                    onPressed: () {
+                      _viralService.requestReview(force: true);
                     },
                     icon: const Icon(Icons.star_rate),
                     label: const Text('Rate Us'),
@@ -362,9 +365,9 @@ class _ViralGrowthCardState extends State<_ViralGrowthCard> {
                 ),
               ],
             ),
-            
+
             const SizedBox(height: 12),
-            
+
             // Social Media Share Buttons
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,

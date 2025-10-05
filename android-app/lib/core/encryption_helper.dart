@@ -2,13 +2,13 @@ import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';
 import 'package:pointycastle/api.dart';
-import 'package:pointycastle/block/aes_fast.dart';
+import 'package:pointycastle/block/aes.dart';
 import 'package:pointycastle/stream/ctr.dart';
 import 'package:pointycastle/digests/sha256.dart';
 
 /// Encryption helper using AES-256
 class EncryptionHelper {
-  static const String _algorithm = 'AES/CTR/NoPadding';
+  // static const String _algorithm = 'AES/CTR/NoPadding';
 
   /// Encrypts a plain text using AES-256
   static String encrypt(String plainText, String key) {
@@ -58,7 +58,7 @@ class EncryptionHelper {
     Uint8List key,
     Uint8List iv,
   ) {
-    final cipher = CTRStreamCipher(AESFastEngine());
+    final cipher = CTRStreamCipher(AESEngine());
     cipher.init(forEncryption, ParametersWithIV(KeyParameter(key), iv));
     return cipher;
   }

@@ -131,7 +131,7 @@ class _PromptsScreenState extends ConsumerState<PromptsScreen> {
           preferredSize: const Size.fromHeight(40),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            color: Colors.white.withOpacity(0.1),
+            color: const Color.fromRGBO(255, 255, 255, 0.1),
             child: Row(
               children: [
                 const Icon(Icons.location_on, color: Colors.white70, size: 16),
@@ -160,6 +160,7 @@ class _PromptsScreenState extends ConsumerState<PromptsScreen> {
           final categoryId = entry.key;
           final category = entry.value;
           final isExpanded = _expandedCategories.contains(categoryId);
+          final categoryColor = category['color'] as Color;
 
           return Card(
             margin: const EdgeInsets.only(bottom: 16),
@@ -176,7 +177,7 @@ class _PromptsScreenState extends ConsumerState<PromptsScreen> {
                           width: 48,
                           height: 48,
                           decoration: BoxDecoration(
-                            color: (category['color'] as Color).withOpacity(0.1),
+                            color: categoryColor.withAlpha((255 * 0.1).round()),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Center(
@@ -235,10 +236,10 @@ class _PromptsScreenState extends ConsumerState<PromptsScreen> {
                                 padding: const EdgeInsets.all(14),
                                 decoration: BoxDecoration(
                                   border: Border.all(
-                                    color: (category['color'] as Color).withOpacity(0.3),
+                                    color: categoryColor.withAlpha((255 * 0.3).round()),
                                   ),
                                   borderRadius: BorderRadius.circular(8),
-                                  color: (category['color'] as Color).withOpacity(0.05),
+                                  color: categoryColor.withAlpha((255 * 0.05).round()),
                                 ),
                                 child: Row(
                                   children: [
