@@ -1,4 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'referral_service.dart';
+
+/// Tracks the number of successful chats.  
+final chatCounterProvider = StateProvider<int>((ref) => 0);
 
 import '../data/api_client_repository.dart';
 import '../data/rag_repository.dart';

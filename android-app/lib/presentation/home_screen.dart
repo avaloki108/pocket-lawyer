@@ -20,6 +20,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     ChatScreen(),
     PromptsScreen(),
     SettingsScreen(),
+    BottomNavigationBarItem(icon: Icon(Icons.quiz), label: 'Quiz'),
   ];
 
   void _onItemTapped(int index) => setState(() => _selectedIndex = index);
