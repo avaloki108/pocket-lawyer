@@ -356,7 +356,7 @@ class _ViralGrowthCardState extends State<_ViralGrowthCard> {
                     label: const Text('Rate Us'),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: const Color(0xFF5D5CDE),
-                      side: const BorderSide(color: const Color(0xFF5D5CDE)),
+                      side: const BorderSide(color: Color(0xFF5D5CDE)),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                   ),
