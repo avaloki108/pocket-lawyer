@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../domain/models/chat_message.dart';
 import '../domain/models/legal_source.dart';
-import '../domain/models/prompt_selected_notifier.dart';
 import 'providers.dart';
 
 class ChatScreen extends ConsumerStatefulWidget {
@@ -22,18 +22,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(() {
-      ref.listen(promptSelectedProvider, (previous, next) {
-        if (next != null && next.isNotEmpty && !_isLoading && mounted) {
-          Future.delayed(const Duration(milliseconds: 100), () {
-            if (mounted) {
-              _sendMessage(next);
-              ref.read(promptSelectedProvider.notifier).clearPrompt();
-            }
-          });
-        }
-      });
-    });
   }
 
   @override
@@ -77,6 +65,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       });
 
       WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+
+      // Track successful chat for review prompt (after 3 successful chats)
+      final viralService = ref.read(viralGrowthServiceProvider);
+      viralService.requestReview();
     } catch (e) {
       setState(() {
         _messages.add(ChatMessage(
@@ -97,17 +89,30 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final selectedStateName = abbrToStateName[selectedStateAbbr] ?? 'Colorado';
     final theme = Theme.of(context);
 
+    // Listen for selected prompts and auto-send them
+    ref.listen<String?>(promptSelectedProvider, (previous, next) {
+      if (next != null && next.isNotEmpty) {
+        _messageController.text = next;
+        ref.read(promptSelectedProvider.notifier).clearPrompt();
+        Future.delayed(const Duration(milliseconds: 100), () {
+          _sendMessage(next);
+        });
+      }
+    });
+
     return Scaffold(
       appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        title: Row(
           children: [
-            const Text('Pocket Lawyer Pro', style: TextStyle(fontSize: 18)),
-            Row(
+            Image.asset(
+              'assets/images/logo.png',
+              height: 40,
+            ),
+            const SizedBox(width: 10),
+            const Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(width: 8, height: 8, decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle)),
-                const SizedBox(width: 6),
-                Text('$selectedStateName • RAG Active', style: const TextStyle(fontSize: 12, color: Colors.white70)),
+                Text('Pocket Lawyer Pro', style: TextStyle(fontSize: 18)),
               ],
             ),
           ],

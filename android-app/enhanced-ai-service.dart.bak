@@ -1,0 +1,382 @@
+// lib/services/ai_service.dart
+import 'package:dio/dio.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+/// Multi-provider AI service supporting OpenRouter, DeepSeek, OpenAI
+/// Includes fallback mechanisms, rate limiting, and caching
+class AIService {
+  final Dio _dio = Dio();
+  
+  // Provider configurations with fallback chain
+  final List<AIProvider> _providers = [
+    AIProvider(
+      name: 'DeepSeek',
+      baseUrl: 'https://api.deepseek.com/v1',
+      models: ['deepseek-chat', 'deepseek-coder'],
+      priority: 1,
+    ),
+    AIProvider(
+      name: 'OpenRouter',
+      baseUrl: 'https://openrouter.ai/api/v1',
+      models: [
+        'anthropic/claude-3-opus',
+        'openai/gpt-4-turbo',
+        'meta-llama/llama-3-70b-instruct',
+        'google/gemini-pro',
+      ],
+      priority: 2,
+    ),
+    AIProvider(
+      name: 'OpenAI',
+      baseUrl: 'https://api.openai.com/v1',
+      models: ['gpt-4-turbo-preview', 'gpt-3.5-turbo'],
+      priority: 3,
+    ),
+  ];
+
+  // Specialized legal prompts for different use cases
+  final Map<String, String> _systemPrompts = {
+    'general': '''You are an expert legal AI assistant with comprehensive knowledge of:
+    - US Federal Law and all 50 state laws
+    - Case precedents and statutory interpretation
+    - Legal procedures and court processes
+    - Contract law, criminal law, civil law, and specialized areas
+    
+    IMPORTANT RULES:
+    1. Always provide citations (statute numbers, case names with years)
+    2. Include clear disclaimers about not being a substitute for an attorney
+    3. Explain complex legal concepts in simple terms
+    4. Identify jurisdictional considerations
+    5. Suggest when professional legal counsel is essential
+    6. Format responses with clear sections and bullet points
+    7. Provide actionable next steps when appropriate''',
+    
+    'contract': '''You are a contract law specialist. Analyze contracts for:
+    - Potential risks and liabilities
+    - Missing clauses or protections
+    - Unfair or unusual terms
+    - Compliance with state/federal law
+    - Negotiation opportunities
+    Always suggest specific improvements and alternative language.''',
+    
+    'litigation': '''You are a litigation strategy advisor. Provide:
+    - Case strength assessment
+    - Relevant precedents and citations
+    - Discovery strategy suggestions
+    - Settlement considerations
+    - Statute of limitations warnings
+    - Procedural requirements and deadlines''',
+    
+    'criminal': '''You are a criminal defense consultant. Focus on:
+    - Constitutional rights and protections
+    - Potential defenses and mitigating factors
+    - Plea bargain considerations
+    - Sentencing guidelines
+    - Appeal possibilities
+    ALWAYS emphasize the critical need for immediate attorney representation.''',
+  };
+
+  /// Main chat completion with intelligent routing and fallback
+  Future<AIResponse> chat({
+    required String message,
+    String category = 'general',
+    String? preferredModel,
+    Map<String, dynamic>? context,
+    bool useRAG = true,
+    double temperature = 0.3,
+    int maxTokens = 2000,
+  }) async {
+    // Enhance query with RAG if enabled
+    String enhancedMessage = message;
+    if (useRAG) {
+      enhancedMessage = await _enhanceWithRAG(message, context);
+    }
+    
+    // Try providers in priority order
+    for (final provider in _providers..sort((a, b) => a.priority.compareTo(b.priority))) {
+      try {
+        final response = await _callProvider(
+          provider: provider,
+          message: enhancedMessage,
+          systemPrompt: _systemPrompts[category] ?? _systemPrompts['general']!,
+          model: preferredModel ?? provider.models.first,
+          temperature: temperature,
+          maxTokens: maxTokens,
+        );
+        
+        if (response != null) {
+          return AIResponse(
+            content: response['content'],
+            provider: provider.name,
+            model: response['model'],
+            citations: _extractCitations(response['content']),
+            confidence: _calculateConfidence(response),
+            tokens: response['usage']?['total_tokens'] ?? 0,
+            cost: _calculateCost(response),
+          );
+        }
+      } catch (e) {
+        print('Provider ${provider.name} failed: $e');
+        // Continue to next provider
+      }
+    }
+    
+    throw Exception('All AI providers failed. Please try again later.');
+  }
+
+  /// RAG enhancement with legal database integration
+  Future<String> _enhanceWithRAG(String query, Map<String, dynamic>? context) async {
+    try {
+      // Search vector database for relevant legal content
+      final relevantDocs = await _searchLegalDatabase(query);
+      
+      if (relevantDocs.isEmpty) return query;
+      
+      // Build enhanced prompt with context
+      final StringBuffer enhanced = StringBuffer();
+      enhanced.writeln('USER QUERY: $query\n');
+      enhanced.writeln('RELEVANT LEGAL CONTEXT:');
+      
+      for (final doc in relevantDocs.take(3)) {
+        enhanced.writeln('- ${doc['title']}: ${doc['excerpt']}');
+        enhanced.writeln('  Source: ${doc['citation']}');
+      }
+      
+      if (context != null) {
+        enhanced.writeln('\nADDITIONAL CONTEXT:');
+        context.forEach((key, value) {
+          enhanced.writeln('- $key: $value');
+        });
+      }
+      
+      enhanced.writeln('\nPlease provide a comprehensive answer using the above context.');
+      
+      return enhanced.toString();
+    } catch (e) {
+      print('RAG enhancement failed: $e');
+      return query; // Fallback to original query
+    }
+  }
+
+  /// Vector search in legal database
+  Future<List<Map<String, dynamic>>> _searchLegalDatabase(String query) async {
+    try {
+      // Pinecone/Weaviate/Custom vector DB integration
+      final response = await _dio.post(
+        'https://api.pinecone.io/query',
+        options: Options(
+          headers: {
+            'Api-Key': dotenv.env['PINECONE_API_KEY'],
+            'Content-Type': 'application/json',
+          },
+        ),
+        data: {
+          'namespace': 'legal-docs',
+          'topK': 5,
+          'includeMetadata': true,
+          'vector': await _getEmbedding(query),
+        },
+      );
+      
+      if (response.statusCode == 200) {
+        return List<Map<String, dynamic>>.from(
+          response.data['matches']?.map((match) => {
+            'title': match['metadata']['title'],
+            'excerpt': match['metadata']['text'],
+            'citation': match['metadata']['citation'],
+            'score': match['score'],
+          }) ?? [],
+        );
+      }
+    } catch (e) {
+      print('Legal database search failed: $e');
+    }
+    return [];
+  }
+
+  /// Get embeddings for vector search
+  Future<List<double>> _getEmbedding(String text) async {
+    try {
+      final response = await _dio.post(
+        'https://api.openai.com/v1/embeddings',
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer ${dotenv.env['OPENAI_API_KEY']}',
+            'Content-Type': 'application/json',
+          },
+        ),
+        data: {
+          'model': 'text-embedding-ada-002',
+          'input': text,
+        },
+      );
+      
+      if (response.statusCode == 200) {
+        return List<double>.from(response.data['data'][0]['embedding']);
+      }
+    } catch (e) {
+      print('Embedding generation failed: $e');
+    }
+    return List.filled(1536, 0.0); // Default embedding dimension
+  }
+
+  /// Call specific AI provider
+  Future<Map<String, dynamic>?> _callProvider({
+    required AIProvider provider,
+    required String message,
+    required String systemPrompt,
+    required String model,
+    required double temperature,
+    required int maxTokens,
+  }) async {
+    final headers = _getProviderHeaders(provider);
+    
+    final response = await _dio.post(
+      '${provider.baseUrl}/chat/completions',
+      options: Options(headers: headers),
+      data: {
+        'model': model,
+        'messages': [
+          {'role': 'system', 'content': systemPrompt},
+          {'role': 'user', 'content': message},
+        ],
+        'temperature': temperature,
+        'max_tokens': maxTokens,
+        'stream': false,
+      },
+    );
+    
+    if (response.statusCode == 200) {
+      final data = response.data;
+      return {
+        'content': data['choices'][0]['message']['content'],
+        'model': model,
+        'usage': data['usage'],
+      };
+    }
+    return null;
+  }
+
+  /// Get provider-specific headers
+  Map<String, String> _getProviderHeaders(AIProvider provider) {
+    switch (provider.name) {
+      case 'DeepSeek':
+        return {
+          'Authorization': 'Bearer ${dotenv.env['DEEPSEEK_API_KEY']}',
+          'Content-Type': 'application/json',
+        };
+      case 'OpenRouter':
+        return {
+          'Authorization': 'Bearer ${dotenv.env['OPENROUTER_API_KEY']}',
+          'HTTP-Referer': 'https://pocketlawyer.ai',
+          'X-Title': 'Pocket Lawyer AI',
+          'Content-Type': 'application/json',
+        };
+      case 'OpenAI':
+        return {
+          'Authorization': 'Bearer ${dotenv.env['OPENAI_API_KEY']}',
+          'Content-Type': 'application/json',
+        };
+      default:
+        return {'Content-Type': 'application/json'};
+    }
+  }
+
+  /// Extract legal citations from response
+  List<String> _extractCitations(String content) {
+    final citations = <String>[];
+    
+    // Extract case citations (e.g., "Smith v. Jones, 123 F.3d 456 (2020)")
+    final casePattern = RegExp(r'\b[A-Z][a-z]+\s+v\.\s+[A-Z][a-z]+[^,]*,\s+\d+\s+[A-Z]\.\d+[a-z]?\s+\d+\s+\(\d{4}\)');
+    citations.addAll(casePattern.allMatches(content).map((m) => m.group(0)!));
+    
+    // Extract statute citations (e.g., "42 U.S.C. § 1983")
+    final statutePattern = RegExp(r'\d+\s+[A-Z]\.[A-Z]\.[A-Z]\.\s+§\s+\d+');
+    citations.addAll(statutePattern.allMatches(content).map((m) => m.group(0)!));
+    
+    return citations.toSet().toList(); // Remove duplicates
+  }
+
+  /// Calculate confidence score
+  double _calculateConfidence(Map<String, dynamic> response) {
+    // Base confidence on model quality
+    double confidence = 0.7;
+    
+    final model = response['model'] as String;
+    if (model.contains('gpt-4') || model.contains('claude-3-opus')) {
+      confidence = 0.95;
+    } else if (model.contains('gpt-3.5') || model.contains('claude-3-sonnet')) {
+      confidence = 0.85;
+    }
+    
+    // Adjust based on response length and quality indicators
+    final content = response['content'] as String;
+    if (content.length > 500) confidence += 0.05;
+    if (content.contains('§') || content.contains(' v. ')) confidence += 0.05;
+    
+    return confidence.clamp(0.0, 1.0);
+  }
+
+  /// Calculate API cost
+  double _calculateCost(Map<String, dynamic> response) {
+    final usage = response['usage'] as Map<String, dynamic>?;
+    if (usage == null) return 0.0;
+    
+    final model = response['model'] as String;
+    final totalTokens = usage['total_tokens'] as int;
+    
+    // Approximate costs per 1K tokens
+    final costPer1K = {
+      'gpt-4': 0.03,
+      'gpt-3.5': 0.002,
+      'claude-3-opus': 0.015,
+      'deepseek': 0.001,
+    };
+    
+    final baseCost = costPer1K.entries
+        .firstWhere((e) => model.contains(e.key), orElse: () => MapEntry('default', 0.002))
+        .value;
+    
+    return (totalTokens / 1000.0) * baseCost;
+  }
+}
+
+/// AI Provider configuration
+class AIProvider {
+  final String name;
+  final String baseUrl;
+  final List<String> models;
+  final int priority;
+  
+  AIProvider({
+    required this.name,
+    required this.baseUrl,
+    required this.models,
+    required this.priority,
+  });
+}
+
+/// AI Response model with metadata
+class AIResponse {
+  final String content;
+  final String provider;
+  final String model;
+  final List<String> citations;
+  final double confidence;
+  final int tokens;
+  final double cost;
+  
+  AIResponse({
+    required this.content,
+    required this.provider,
+    required this.model,
+    required this.citations,
+    required this.confidence,
+    required this.tokens,
+    required this.cost,
+  });
+}
+
+/// Riverpod provider for AI service
+final aiServiceProvider = Provider<AIService>((ref) => AIService());

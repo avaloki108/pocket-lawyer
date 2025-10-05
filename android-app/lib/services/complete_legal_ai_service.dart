@@ -71,7 +71,6 @@ class CompleteLegalAIService {
       }
       throw Exception('CourtListener API error: ${response.statusCode}');
     } catch (e) {
-      print('CourtListener error: $e');
       return {'error': e.toString(), 'cases': []};
     }
   }
@@ -108,7 +107,8 @@ class CompleteLegalAIService {
           final billId = bills.keys.elementAt(i);
           if (billId == 'summary') continue;
 
-          final billDetail = await _getBillDetails(bills[billId]['bill_id'], apiKey);
+          final billIdValue = bills[billId]['bill_id']?.toString() ?? '';
+          final billDetail = await _getBillDetails(billIdValue, apiKey);
           if (billDetail != null) {
             detailedBills.add(billDetail);
           }
@@ -122,12 +122,12 @@ class CompleteLegalAIService {
       }
       throw Exception('LegiScan API error');
     } catch (e) {
-      print('LegiScan error: $e');
       return {'error': e.toString(), 'bills': []};
     }
   }
 
-  Future<Map<String, dynamic>?> _getBillDetails(int billId, String apiKey) async {
+  Future<Map<String, dynamic>?> _getBillDetails(String billId, String? apiKey) async {
+    if (apiKey == null || apiKey.isEmpty || billId.isEmpty) return null;
     try {
       final response = await _dio.get(
         'https://api.legiscan.com/',
@@ -158,7 +158,6 @@ class CompleteLegalAIService {
         };
       }
     } catch (e) {
-      print('Error fetching bill $billId: $e');
     }
     return null;
   }
@@ -225,7 +224,6 @@ class CompleteLegalAIService {
       }
       throw Exception('Congress.gov API error: ${response.statusCode}');
     } catch (e) {
-      print('Congress.gov error: $e');
       return {'error': e.toString(), 'bills': []};
     }
   }
@@ -243,7 +241,6 @@ class CompleteLegalAIService {
     String? jurisdiction,
     String? dateRange,
   }) async {
-    print('🔍 Executing comprehensive legal search: $userQuery');
 
     // Parallel search across all law libraries
     final futures = <Future>[];
@@ -379,7 +376,6 @@ ${citations.join('\n')}
         return response.data['choices'][0]['message']['content'];
       }
     } catch (e) {
-      print('OpenRouter error, falling back to OpenAI: $e');
 
       // Fallback to OpenAI
       return await _fallbackToOpenAI(userQuery, legalContext, citations);
@@ -419,7 +415,6 @@ ${citations.join('\n')}
         return response.data['choices'][0]['message']['content'];
       }
     } catch (e) {
-      print('OpenAI fallback error: $e');
     }
 
     return 'Analysis temporarily unavailable.';

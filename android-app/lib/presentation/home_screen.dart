@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import 'chat_screen.dart';
 import 'prompts_screen.dart';
+import 'providers.dart';
 import 'settings_screen.dart';
-import '../domain/models/prompt_selected_notifier.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -15,18 +16,6 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   int _selectedIndex = 0;
 
-  @override
-  void initState() {
-    super.initState();
-    Future.microtask(() {
-      ref.listen(promptSelectedProvider, (previous, next) {
-        if (next != null && next.isNotEmpty) {
-          setState(() => _selectedIndex = 0);
-        }
-      });
-    });
-  }
-
   final List<Widget> _screens = const [
     ChatScreen(),
     PromptsScreen(),
@@ -37,6 +26,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Listen for prompt selection and switch to chat tab
+    ref.listen<String?>(promptSelectedProvider, (previous, next) {
+      if (next != null && next.isNotEmpty && _selectedIndex != 0) {
+        setState(() => _selectedIndex = 0);
+      }
+    });
+
     return Scaffold(
       body: _screens[_selectedIndex],
       bottomNavigationBar: Column(

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import 'providers.dart';
-import '../domain/models/prompt_selected_notifier.dart';
 
 class PromptsScreen extends ConsumerStatefulWidget {
   const PromptsScreen({super.key});

@@ -164,48 +164,50 @@ class RagRepositoryImpl implements RagRepository {
 
   String _formatStateLawResponse(Map<String, dynamic> result, String state, String? summary) {
     final title = result['title'] ?? result['name'] ?? 'Unknown Title';
-    final description = result['description'] ?? result['summary'] ?? '';
     final billNumber = result['bill_number'] ?? result['number'] ?? '';
 
     final buffer = StringBuffer();
-    buffer.writeln('Based on $state law:');
-    buffer.writeln();
-    buffer.writeln('Bill: $billNumber');
-    buffer.writeln('Title: $title');
-    if (description.isNotEmpty) {
-      buffer.writeln();
-      buffer.writeln('Description: $description');
-    }
     if (summary != null) {
-      buffer.writeln();
-      buffer.writeln('AI Summary:');
       buffer.writeln(summary);
+      buffer.writeln();
+      buffer.writeln('---');
+      buffer.writeln();
+      buffer.writeln('**Source Information:**');
+      buffer.writeln('* **Bill:** $billNumber ($state)');
+      buffer.writeln('* **Title:** $title');
+    } else {
+      final description = result['description'] ?? result['summary'] ?? '';
+      buffer.writeln('**$title**');
+      buffer.writeln();
+      buffer.writeln(description);
+      buffer.writeln();
+      buffer.writeln('*Bill Number: $billNumber*');
     }
     buffer.writeln();
-    buffer.writeln('Disclaimer: This is general information based on legislative data. Not legal advice.');
+    buffer.writeln('> Disclaimer: This is general information, not legal advice.');
     return buffer.toString();
   }
 
   String _formatFederalLawResponse(Map<String, dynamic> bill, String? summary) {
     final title = bill['title'] ?? 'Unknown Title';
     final number = bill['number'] ?? '';
-    final congress = bill['congress'] ?? '';
-    final originChamber = bill['originChamber'] ?? bill['chamber'] ?? '';
 
     final buffer = StringBuffer();
-    buffer.writeln('Based on federal law:');
-    buffer.writeln();
-    buffer.writeln('Bill: $number');
-    if (congress.toString().isNotEmpty) buffer.writeln('Congress: $congress');
-    if (originChamber.toString().isNotEmpty) buffer.writeln('Chamber: $originChamber');
-    buffer.writeln('Title: $title');
     if (summary != null) {
-      buffer.writeln();
-      buffer.writeln('AI Summary:');
       buffer.writeln(summary);
+      buffer.writeln();
+      buffer.writeln('---');
+      buffer.writeln();
+      buffer.writeln('**Source Information:**');
+      buffer.writeln('* **Bill:** $number (Federal)');
+      buffer.writeln('* **Title:** $title');
+    } else {
+      buffer.writeln('**$title**');
+      buffer.writeln();
+      buffer.writeln('*Bill Number: $number*');
     }
     buffer.writeln();
-    buffer.writeln('Disclaimer: This is general information based on federal legislative data. Not legal advice.');
+    buffer.writeln('> Disclaimer: This is general information, not legal advice.');
     return buffer.toString();
   }
 }

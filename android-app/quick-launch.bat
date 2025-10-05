@@ -1,0 +1,3 @@
+@echo off
+echo Starting Pocket Lawyer in release mode (faster startup)...
+flutter run -d emulator-5554 --release --dart-define=DISABLE_BIOMETRIC=true

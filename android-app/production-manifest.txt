@@ -1,0 +1,235 @@
+<!-- android/app/src/main/AndroidManifest.xml -->
+<!-- PRODUCTION-READY MANIFEST FOR GOOGLE PLAY STORE -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    package="ai.pocketlawyer.app">
+    
+    <!-- PERMISSIONS -->
+    <!-- Network & Connectivity -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    
+    <!-- Biometric Authentication -->
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
+    <uses-permission android:name="android.permission.USE_FINGERPRINT" />
+    
+    <!-- Storage for Document Caching -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" 
+        android:maxSdkVersion="32" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" 
+        android:maxSdkVersion="28" />
+    
+    <!-- Camera for Document Scanning -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera" 
+        android:required="false" />
+    <uses-feature android:name="android.hardware.camera.autofocus" 
+        android:required="false" />
+    
+    <!-- Microphone for Voice Input -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    
+    <!-- Push Notifications -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    
+    <!-- In-App Purchases -->
+    <uses-permission android:name="com.android.vending.BILLING" />
+    
+    <!-- App Shortcuts -->
+    <uses-permission android:name="com.android.launcher.permission.INSTALL_SHORTCUT" />
+    
+    <!-- QUERIES for App Links -->
+    <queries>
+        <!-- Handle legal document links -->
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="https" />
+        </intent>
+        <!-- Text processing for legal documents -->
+        <intent>
+            <action android:name="android.intent.action.PROCESS_TEXT" />
+            <data android:mimeType="text/plain" />
+        </intent>
+        <!-- Share functionality -->
+        <intent>
+            <action android:name="android.intent.action.SEND" />
+            <data android:mimeType="text/plain" />
+        </intent>
+    </queries>
+    
+    <application
+        android:name="${applicationName}"
+        android:label="Pocket Lawyer"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:allowBackup="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:supportsRtl="true"
+        android:theme="@style/LaunchTheme"
+        android:usesCleartextTraffic="false"
+        android:hardwareAccelerated="true"
+        android:largeHeap="true"
+        android:requestLegacyExternalStorage="false"
+        android:networkSecurityConfig="@xml/network_security_config"
+        tools:targetApi="31">
+        
+        <!-- MAIN ACTIVITY -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:launchMode="singleTop"
+            android:theme="@style/LaunchTheme"
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
+            android:hardwareAccelerated="true"
+            android:windowSoftInputMode="adjustResize"
+            android:screenOrientation="portrait">
+            
+            <!-- Splash Screen Theme -->
+            <meta-data
+                android:name="io.flutter.embedding.android.NormalTheme"
+                android:resource="@style/NormalTheme" />
+            
+            <!-- Main App Launch -->
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            
+            <!-- Deep Links for Legal Documents -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" 
+                      android:host="pocketlawyer.ai" 
+                      android:pathPrefix="/legal" />
+            </intent-filter>
+            
+            <!-- App Links -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="pocketlawyer" />
+            </intent-filter>
+            
+            <!-- Share Target for Legal Text -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+            
+            <!-- Voice Action Support -->
+            <intent-filter>
+                <action android:name="android.intent.action.VOICE_COMMAND" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+        
+        <!-- FIREBASE SERVICES -->
+        <!-- Cloud Messaging Service -->
+        <service
+            android:name=".MyFirebaseMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+        
+        <!-- Firebase Analytics -->
+        <meta-data
+            android:name="firebase_analytics_collection_enabled"
+            android:value="true" />
+        
+        <!-- Firebase Crashlytics -->
+        <meta-data
+            android:name="firebase_crashlytics_collection_enabled"
+            android:value="true" />
+        
+        <!-- Firebase Performance Monitoring -->
+        <meta-data
+            android:name="firebase_performance_collection_enabled"
+            android:value="true" />
+        
+        <!-- Default Notification Channel -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_notification" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_color"
+            android:resource="@color/primary" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="legal_updates" />
+        
+        <!-- GOOGLE PLAY SERVICES -->
+        <!-- In-App Review API -->
+        <meta-data
+            android:name="com.google.android.play.core.version"
+            android:value="@integer/google_play_services_version" />
+        
+        <!-- Google Play Billing -->
+        <meta-data
+            android:name="com.android.vending.billing.version"
+            android:value="6" />
+        
+        <!-- AD NETWORK (Optional for Monetization) -->
+        <!-- Google AdMob App ID -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-XXXXXXXXXXXXXXXX~YYYYYYYYYY" />
+        
+        <!-- WIDGET PROVIDER (Home Screen Widget) -->
+        <receiver android:name=".LegalTipWidget"
+            android:exported="true"
+            android:label="Daily Legal Tip">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_info" />
+        </receiver>
+        
+        <!-- FILE PROVIDER for Document Sharing -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+        
+        <!-- WORK MANAGER for Background Tasks -->
+        <provider
+            android:name="androidx.work.impl.WorkManagerInitializer"
+            android:authorities="${applicationId}.workmanager-init"
+            android:exported="false"
+            tools:node="remove" />
+        
+        <!-- APP SHORTCUTS -->
+        <meta-data
+            android:name="android.app.shortcuts"
+            android:resource="@xml/shortcuts" />
+        
+        <!-- Flutter Embedding -->
+        <meta-data
+            android:name="flutterEmbedding"
+            android:value="2" />
+        
+        <!-- ADAPTIVE ICON -->
+        <meta-data
+            android:name="android.adaptive_icon_foreground"
+            android:resource="@mipmap/ic_launcher_foreground" />
+        <meta-data
+            android:name="android.adaptive_icon_background"
+            android:resource="@color/ic_launcher_background" />
+    </application>
+</manifest>

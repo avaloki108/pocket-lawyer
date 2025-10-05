@@ -1,16 +1,22 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
+
 import 'core/constants.dart';
 import 'core/themes.dart';
-import 'presentation/splash_screen.dart';
-import 'presentation/home_screen.dart';
 import 'presentation/chat_screen.dart';
+import 'presentation/home_screen.dart';
 import 'presentation/prompts_screen.dart';
 import 'presentation/settings_screen.dart';
+import 'presentation/splash_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Google Mobile Ads in background (non-blocking)
+  MobileAds.instance.initialize();
+
   // Attempt to load .env file (optional). If missing, proceed; keys may come from --dart-define.
   try {
     await dotenv.load(fileName: '.env');
@@ -19,7 +25,6 @@ Future<void> main() async {
       await dotenv.load(fileName: '.env.example');
     } catch (_) {}
   }
-
 
   runApp(const ProviderScope(child: MyApp()));
 }

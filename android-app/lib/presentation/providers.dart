@@ -1,13 +1,19 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../data/api_client_repository.dart';
+import '../data/rag_repository.dart';
+import '../data/secure_storage_repository.dart';
 import '../domain/chat_usecase.dart';
 import '../domain/prompts_usecase.dart';
 import '../domain/settings_usecase.dart';
-import '../data/rag_repository.dart';
-import '../data/secure_storage_repository.dart';
-import '../data/api_client_repository.dart';
-import '../infrastructure/open_router_api_client.dart';
-import '../infrastructure/legiscan_api_client.dart';
 import '../infrastructure/congress_api_client.dart';
+import '../infrastructure/legiscan_api_client.dart';
+import '../infrastructure/open_router_api_client.dart';
+import '../services/viral_growth_service.dart';
+import 'deepseek_providers.dart';
+
+// Export prompt selected provider for cross-screen communication
+export '../domain/models/prompt_selected_notifier.dart' show promptSelectedProvider;
 
 final openRouterClientProvider = Provider<OpenRouterApiClient>(
       (ref) => OpenRouterApiClient(),
@@ -21,9 +27,10 @@ final congressClientProvider = Provider<CongressApiClient>(
 
 final apiClientRepositoryProvider = Provider<ApiClientRepository>((ref) {
   final openRouterClient = ref.read(openRouterClientProvider);
+  final deepSeekClient = ref.read(deepseekApiClientProvider);  // From deepseek_providers.dart
   final legiScanClient = ref.read(legiScanClientProvider);
   final congressClient = ref.read(congressClientProvider);
-  return ApiClientRepository(openRouterClient, legiScanClient, congressClient);
+  return ApiClientRepository(openRouterClient, deepSeekClient, legiScanClient, congressClient);
 });
 
 final ragRepositoryProvider = Provider<RagRepository>((ref) {
@@ -34,6 +41,11 @@ final ragRepositoryProvider = Provider<RagRepository>((ref) {
 final secureStorageProvider = Provider<SecureStorageRepository>(
       (ref) => SecureStorageRepository(),
 );
+
+// Viral growth service for referrals, reviews, sharing
+final viralGrowthServiceProvider = Provider<ViralGrowthService>((ref) {
+  return ViralGrowthService();
+});
 
 final chatUseCaseProvider = Provider<ChatUseCase>((ref) {
   final repo = ref.read(ragRepositoryProvider);
