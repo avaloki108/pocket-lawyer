@@ -19,13 +19,13 @@ if not exist .env (
         echo.
         echo # LLM Client API Keys - PRODUCTION READY
         echo OLLAMA_MODEL=gpt-oss:20b
-        echo OPENAI_API_KEY=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
-        echo OPENROUTER_API_KEY=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
+        echo OPENAI_API_KEY=your-openai-api-key
+        echo OPENROUTER_API_KEY=your-openrouter-api-key
         echo.
         echo # CRITICAL LAW LIBRARY API KEYS - DO NOT MODIFY
-        echo COURTLISTENER_API_KEY=2ad5f6b8c6f5bed4da797054dda8644ff2f98821
-        echo LEGISCAN_API_KEY=6da9b568d057150d0f032566d5ca54e4
-        echo CONGRESS_GOV_API_KEY=mXdjKaTeDzfwekxPaPILvoa8malhIenpSNtmCkwI
+        echo COURTLISTENER_API_KEY=your-courtlistener-api-key
+        echo LEGISCAN_API_KEY=your-legiscan-api-key
+        echo CONGRESS_GOV_API_KEY=your-congress-gov-api-key
         echo.
         echo # Optional Services
         echo PINECONE_API_KEY=
